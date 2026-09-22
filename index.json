@@ -271,7 +271,22 @@
       "D": "Add API permissions"
     },
     "last_update": "2025-10-07",
-    "pub_date": "2025-10-07"
+    "pub_date": "2025-10-07",
+    "tests": {
+      "A": {
+        "text": "Atomic Test 1",
+        "url": "https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1098.001/T1098.001.md#atomic-test-1---azure-ad-application-hijacking---service-principal"
+      },
+      "B": null,
+      "C": {
+        "text": "Atomic Test 1-2",
+        "url": "https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1098.003/T1098.003.md"
+      },
+      "D": {
+        "text": "Atomic Test 8",
+        "url": "https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1098/T1098.md#atomic-test-8---azure-ad---adding-permission-to-application"
+      }
+    }
   },
   {
     "name": "Azure Guest Account Creation",
@@ -365,7 +380,13 @@
       "A": "Submit ticket to local cache"
     },
     "last_update": "2025-12-16",
-    "pub_date": "2025-12-16"
+    "pub_date": "2025-12-16",
+    "tests": {
+      "A": {
+        "text": "Atomic Tests 1-2",
+        "url": "https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1550.003/T1550.003.md"
+      }
+    }
   },
   {
     "name": "Process Injection via Asynchronous Procedure Call (APC)",
@@ -624,5 +645,29 @@
     },
     "last_update": "2026-07-22",
     "pub_date": "2026-07-22"
+  },
+  {
+    "name": "OAuth Authorization Code Phishing",
+    "id": "TRR0034",
+    "tactics": [
+      "Credential Access"
+    ],
+    "contributors": [
+      "Kyle Barboza"
+    ],
+    "external_ids": [
+      "T1528"
+    ],
+    "platforms": [
+      "Azure"
+    ],
+    "procedures": {
+      "A": "Authorization Code Collection via Social Engineering (ConsentFix)"
+    },
+    "tests": {
+      "A": null
+    },
+    "last_update": "2026-08-17",
+    "pub_date": "2026-08-17"
   }
 ]
