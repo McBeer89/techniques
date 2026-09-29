@@ -183,6 +183,11 @@ a `localhost` reply URL used by command-line or development-oriented clients.
 >     $_.ReplyUrls -like "*localhost*"
 > }
 > ```
+>
+> The script lists only applications that have a service principal in the
+> tenant, and the `ReplyUrls` property does not show whether a URL is
+> registered as a web or a mobile and desktop redirect
+> ([servicePrincipal resource type][microsoft-graph-sp]).
 
 This validation is important for procedure scoping. A non-localhost reply URL
 would only support direct attacker collection if the first-party application has
@@ -206,7 +211,13 @@ https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
 
 If the request is valid, the identity provider issues an **access token**
 representing the authenticated user and the permissions granted during the
-authorization request.
+authorization request. Whether the request must include a client secret or
+certificate depends on how the redirect URI is registered: a mobile and desktop
+redirect URI classifies the application as a public client, which redeems the
+code without a credential, while a web redirect URI classifies it as a
+confidential client, which must present one
+([AADSTS7000218][microsoft-aadsts7000218], [authorization code
+flow][microsoft-auth-code-flow]).
 
 The client application can then use this token to access APIs such as Microsoft
 Graph.
@@ -219,8 +230,11 @@ applications developed and maintained by Microsoft.
 These applications are often represented in customer tenants by service
 principals that Microsoft provisions automatically or on first use. The service
 principal is the tenant-local object for the globally defined Microsoft
-application. Delegated permission grants for that service principal are stored
-as `OAuth2PermissionGrant` objects. When those grants already exist for the
+application. First-party applications do not always result in a service
+principal in the tenant, and they still appear in sign-in reports when they do
+not ([Verify first-party Microsoft applications][microsoft-first-party-apps]).
+Delegated permission grants for that service principal are stored as
+`OAuth2PermissionGrant` objects. When those grants already exist for the
 requested resource and scope, Entra ID does not show the user a new consent
 prompt because consent has already been granted in the tenant.
 
@@ -254,13 +268,17 @@ without registering a new application or triggering a new consent prompt.
 
 Other commonly discussed first-party applications include Microsoft Azure CLI,
 Microsoft Azure PowerShell, Visual Studio, Visual Studio Code, Microsoft Teams,
-and Aadrm Admin Powershell. These applications are attractive targets because
-they are Microsoft first-party applications with existing consent grants in many
-tenants, allowing authorization requests to avoid the suspicious consent prompt
-associated with newly registered third-party applications. The practical impact
-depends on which delegated scopes are already granted for the selected
-application and whether the application's registered reply URLs allow the
-authorization code to be exposed or captured.
+and Aadrm Admin Powershell. This list is not exhaustive. [EntraScopes] maintains
+a ConsentFix filter over Microsoft first-party applications (61 applications as
+of September 2026) with the affected reply URL for each one, both `localhost`
+and non-publicly resolvable domains such as `https://sqlaad/`. These
+applications are attractive targets because they are Microsoft first-party
+applications with existing consent grants in many tenants, allowing
+authorization requests to avoid the suspicious consent prompt associated with
+newly registered third-party applications. The practical impact depends on which
+delegated scopes are already granted for the selected application and whether
+the application's registered reply URLs allow the authorization code to be
+exposed or captured.
 
 For many ConsentFix examples, that useful reply URL is `localhost`. Local
 redirect URIs are common for public clients and developer tools because a
@@ -394,10 +412,11 @@ a different environment than the one used during the initial authentication.
 The relevant data artifacts are the authorization request parameters, the
 interactive sign-in event created when the victim authenticates, and the
 non-interactive sign-in or token issuance event created when the code is
-redeemed. The attacker operations are the phishing delivery, authorization
-request construction, victim code collection, and token redemption. Keeping
-these artifacts separate from the attacker actions helps avoid treating log
-records as steps in the attack itself.
+redeemed (Microsoft lists redeeming an authorization code among [non-interactive
+user sign-ins][microsoft-noninteractive]). The attacker operations are the
+phishing delivery, authorization request construction, victim code collection,
+and token redemption. Keeping these artifacts separate from the attacker actions
+helps avoid treating log records as steps in the attack itself.
 
 ## Available Emulation Tests
 
@@ -414,6 +433,13 @@ records as steps in the attack itself.
 - [Microsoft - Redirect URI Best Practices][microsoft-redirect-uri]
 - [Microsoft Graph - oAuth2PermissionGrant][microsoft-oauth2-grant]
 - [John Hammond - ConsentFix Video Walkthrough][hammond-video]
+- [EntraScopes - Entra ID first-party applications and scopes][EntraScopes]
+- [Microsoft - OAuth 2.0 authorization code flow][microsoft-auth-code-flow]
+- [Microsoft - Error AADSTS7000218][microsoft-aadsts7000218]
+- [Microsoft - Verify first-party Microsoft applications in sign-in
+  reports][microsoft-first-party-apps]
+- [Microsoft - Non-interactive user sign-ins][microsoft-noninteractive]
+- [Microsoft Graph - servicePrincipal resource type][microsoft-graph-sp]
 
 [T1528]: https://attack.mitre.org/techniques/T1528/
 [push-consentfix]: https://pushsecurity.com/blog/consentfix
@@ -427,3 +453,14 @@ records as steps in the attack itself.
 [microsoft-oauth2-grant]:
   https://learn.microsoft.com/en-us/graph/api/resources/oauth2permissiongrant
 [hammond-video]: https://www.youtube.com/watch?v=AAiiIY-Soak
+[EntraScopes]: https://entrascopes.com/
+[microsoft-auth-code-flow]:
+  https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
+[microsoft-aadsts7000218]:
+  https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/app-integration/confidential-client-application-authentication-error-aadsts7000218
+[microsoft-first-party-apps]:
+  https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/governance/verify-first-party-apps-sign-in
+[microsoft-noninteractive]:
+  https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins
+[microsoft-graph-sp]:
+  https://learn.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
