@@ -7,7 +7,7 @@
 | ID           | TRR0000                           |
 | External IDs | [AZT402], [T1098.003]             |
 | Tactics      | Privilege Escalation, Persistence |
-| Platforms    | Azure                             |
+| Platforms    | IaaS, Identity Provider           |
 | Contributors | John McGuinness                   |
 
 ### Scope Statement
@@ -42,8 +42,8 @@ directory role invokes a single Azure Resource Manager action that
 grants that same principal the Azure RBAC role User Access
 Administrator at root scope `/`, the scope above every management group
 and subscription in the tenant. The action carries no request body and
-no caller-selectable parameter, so the platform fixes the granted role,
-the granted scope, and the recipient. Because Microsoft Entra ID and
+no parameter that selects the role, the scope, or the recipient, so the
+platform fixes all three. Because Microsoft Entra ID and
 Azure resources are secured by two independent authorization systems,
 the action is the documented mechanism that carries a directory-plane
 identity into the resource plane, and the assignment it creates
@@ -62,7 +62,7 @@ grant access to Azure resources, Azure role assignments do not grant
 access to Microsoft Entra ID, and by default the Global Administrator
 does not have access to Azure resources. A tenant can hold a Global
 Administrator who cannot read a single virtual machine, and a
-subscription Owner who cannot read a single user object.
+subscription Owner whose Azure role grants nothing in the directory.
 
 `Microsoft.Authorization/elevateAccess/action` is the documented
 platform mechanism that bridges the two systems, and no Azure RBAC
@@ -82,9 +82,10 @@ group, and above all of them root scope `/`. The tenant root management group
 sits below `/`. Multiple sources, including Microsoft's own management groups
 overview and its Defender for Cloud tenant-wide permissions article, describe
 the resulting grant as landing on the tenant root management group; the
-assignment the platform creates is scoped to `/`. The portal `Access control
-(IAM)` blade refuses to delete an assignment scoped to `/`, directing the
-operator back to the toggle instead.
+assignment the platform creates is scoped to `/`. Microsoft states that an
+attempt to remove the User Access Administrator assignment on the portal
+`Access control (IAM)` page produces a message directing the operator to
+the toggle or to Azure PowerShell, the Azure CLI, or the REST API.
 
 Two platform facts confirm `/` as a special scope. Built-in role definitions
 carry an `assignableScopes` value of `["/"]`, and custom role definitions cannot
@@ -143,12 +144,12 @@ Azure CLI generic REST command, and the Python, Go, JavaScript, and
 .NET management SDKs. Every one of those surfaces resolves to the same
 action string against the same endpoint.
 
-Two surfaces that cover adjacent operations do not carry the elevation
-itself. Azure PowerShell has no dedicated elevation cmdlet: Microsoft's
-PowerShell guidance for the technique directs the reader to the portal
-or the REST API, and the documented PowerShell surface covers listing
-and removing the root-scope assignment. Microsoft Graph exposes no
-equivalent surface at all. Graph exposes Entra directory role
+Two further surfaces cover adjacent operations. Azure PowerShell has no
+dedicated elevation cmdlet: Microsoft's PowerShell guidance for the
+technique directs the reader to the portal or the REST API, and the
+documented PowerShell surface covers listing and removing the
+root-scope assignment. Microsoft Graph exposes no equivalent surface at
+all. Graph exposes Entra directory role
 assignments, whose scope is carried in a `directoryScopeId` value that
 identifies a directory object, a different namespace from the Azure
 RBAC scope `/`; Azure RBAC root scope is not reachable through Graph.
@@ -170,11 +171,11 @@ Two consequences follow. Deactivating a Privileged Identity Management
 eligible assignment of Global Administrator does not remove the
 root-scope assignment; Microsoft states that deactivating the role
 assignment does not change the `Access management for Azure resources`
-toggle to `No`. Removing the Global Administrator directory role from
-the identity outright does not remove the assignment either, a case
-Microsoft's documentation does not address: a principal that no longer
-holds the directory role holds its User Access Administrator assignment
-at scope `/`, and that assignment appears in a listing at that scope.
+toggle to `No`. The assignment also exists without the directory role
+that authorized it, a case Microsoft's documentation does not address:
+a principal that no longer holds the directory role holds a User Access
+Administrator assignment at scope `/`, and that assignment appears in a
+listing at that scope.
 The Azure RBAC object outlives the Entra directory role that authorized
 its creation, which is why this technique carries the Persistence
 tactic alongside Privilege Escalation.
@@ -247,9 +248,11 @@ management-group-level events, and retrieves tenant-level events
 through a separate REST API whose path carries no subscription. Two
 independent vendor analyses state that Directory Activity records have
 no diagnostic export option. Reading the tenant-level log requires an
-Azure role assignment at scope `/`, and Microsoft states that access to
+Azure role assignment at scope `/`; Microsoft states that access to
 tenant-level activity logs requires having used elevate access at least
-once. The Entra directory audit copy is flagged preview: Microsoft
+once, since the elevate action is what creates a tenant's first
+root-scope assignment. The Entra directory audit copy is flagged
+preview: Microsoft
 carries an Important banner stating that elevate access log entries in
 the Entra directory audit logs are in preview. Microsoft's Azure RBAC
 changelog dates that preview to January 2025.
@@ -263,7 +266,7 @@ sources and the Azure Activity log. That plan is a paid
 per-subscription offering, and Microsoft's Azure Resource Manager
 security baseline records that it is not enabled by default.
 
-A fourth surface carries the raw operation string itself. The Microsoft
+A fourth source carries the raw operation string itself. The Microsoft
 Defender XDR `CloudAuditEvents` advanced hunting table records Azure
 Resource Manager control-plane events, holding the operation string in
 its `OperationName` column and identifying the origin in `DataSource`.
@@ -277,9 +280,7 @@ populated through Defender for Cloud onboarding.
 Microsoft documents four legitimate reasons for elevating: regaining
 access to a subscription or management group after access is lost,
 granting a user access, seeing all subscriptions in an organization,
-and allowing an automation application tenant-wide access. The
-recurring case is an orphaned subscription whose last Owner has left
-the organization.
+and allowing an automation application tenant-wide access.
 
 One benign path produces the full record set without a deliberate
 invocation. Microsoft Defender for Cloud's tenant-wide visibility
@@ -323,8 +324,8 @@ distinguished from `/` in [Azure Scopes and Root Scope].
 
 This procedure crosses the boundary between the two authorization
 planes described in [Two Authorization Planes in a Microsoft Entra
-Tenant], and that crossing is what distinguishes it from every adjacent
-mechanism.
+Tenant], and that crossing is what distinguishes it from the adjacent
+mechanisms placed outside the scope boundary.
 
 There is one procedure in this TRR because the operation exposes
 nothing to vary. The request carries no body and no parameter other
@@ -335,9 +336,11 @@ REST command, raw Azure Resource Manager REST, and the management SDKs
 each emit the same action string against the same endpoint and produce
 the same records, which makes them instances of this one path rather
 than separate paths. Microsoft's Azure China rendering of the
-capability is identical apart from the `management.chinacloudapi.cn`
-hostname, and a hostname is not an essential operation, so that
-rendering is an instance of this path as well. Invocation by a workload
+capability carries the same action, endpoint path, `api-version` values,
+and log strings, differing in the `management.chinacloudapi.cn` and
+`portal.azure.cn` hostnames, and a hostname is not an essential
+operation, so that rendering is an instance of this path as well.
+Invocation by a workload
 identity holding the directory role is an instance of the same path for
 the same reason: the credential flow that produced the token changes
 which sign-in record exists upstream, not which operations the
@@ -373,7 +376,7 @@ lifetime of that token, and a token issued after the removal does not.
 The Azure role-based access control assignment the technique creates
 follows a different model, described in
 [Durability of the Resulting Assignment]: it is an independent object
-and survives removal of the directory role outright.
+that exists without the directory role.
 
 `Obtain ARM Token` is the second prerequisite, because `elevateAccess`
 is an Azure Resource Manager endpoint and the caller presents an access
@@ -414,8 +417,9 @@ platform creates the same assignment for it, with a `principalType` of
 Entra AADServicePrincipalSignInLogs (Azure Resource Manager) telemetry,
 carrying the same resource display name and the same application
 identifier as the user flows, and identifying the caller by service
-principal object ID. Repeated acquisitions by one service principal are
-presented as a single aggregated entry rather than one entry each.
+principal object ID. In the Entra admin center sign-in logs view,
+repeated acquisitions by one service principal are presented as a
+single aggregated entry rather than one entry each.
 
 A managed identity holding the same directory role can invoke the
 action as well. A managed identity acquiring an Azure Resource Manager
@@ -503,9 +507,14 @@ can carry, and a managed identity produces the second of them.
 
 ## Available Emulation Tests
 
-| ID            | Link                                              |
-|---------------|---------------------------------------------------|
-| TRR0000.AZR.A | [Stratus Red Team Root User Access Administrator] |
+| ID                                                       | Link                                              |
+|----------------------------------------------------------|---------------------------------------------------|
+| azure.privilege-escalation.root-user-access-administrator | [Stratus Red Team Root User Access Administrator] |
+
+Atomic Red Team carries no test for this technique. Its T1098.003
+atomics cover Entra directory role and Microsoft 365 role additions
+rather than the Azure RBAC elevation, so no atomic test identifier maps
+to this procedure.
 
 ## References
 
@@ -514,6 +523,8 @@ can carry, and a managed identity produces the second of them.
 - [MITRE ATT&CK Scattered Spider Group]
 - [Elevate Access to Manage Azure Subscriptions - Microsoft Learn]
 - [Global Administrator Elevate Access REST API - Microsoft Learn]
+- [Azure REST API Specification Elevate Access 2015-07-01 - GitHub]
+- [Azure.ResourceManager.Authorization Extensions - Microsoft Learn]
 - [Azure Permissions for Management and Governance - Microsoft Learn]
 - [Azure Roles and Microsoft Entra Roles - Microsoft Learn]
 - [Azure RBAC Scope Overview - Microsoft Learn]
@@ -537,6 +548,7 @@ can carry, and a managed identity produces the second of them.
 - [Defender for Cloud Resource Manager Alerts - Microsoft Learn]
 - [Defender for Resource Manager Alert Sources - Microsoft Learn]
 - [CloudAuditEvents Table Schema - Microsoft Learn]
+- [CloudAuditEvents Azure Monitor Logs Reference - Microsoft Learn]
 - [Azure RBAC What's New Changelog - Microsoft Learn]
 - [Azure Resource Manager Security Baseline - Microsoft Learn]
 - [Defender for Cloud Tenant-Wide Permissions Management - Microsoft Learn]
@@ -559,6 +571,8 @@ can carry, and a managed identity produces the second of them.
 [MITRE ATT&CK Scattered Spider Group]: https://attack.mitre.org/groups/G1015/
 [Elevate Access to Manage Azure Subscriptions - Microsoft Learn]: https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin
 [Global Administrator Elevate Access REST API - Microsoft Learn]: https://learn.microsoft.com/en-us/rest/api/authorization/global-administrator/elevate-access
+[Azure REST API Specification Elevate Access 2015-07-01 - GitHub]: https://github.com/Azure/azure-rest-api-specs/blob/main/specification/authorization/resource-manager/Microsoft.Authorization/Authorization/stable/2015-07-01/authorization-ElevateAccessCalls.json
+[Azure.ResourceManager.Authorization Extensions - Microsoft Learn]: https://learn.microsoft.com/dotnet/api/azure.resourcemanager.authorization.authorizationextensions
 [Azure Permissions for Management and Governance - Microsoft Learn]: https://learn.microsoft.com/azure/role-based-access-control/permissions/management-and-governance#microsoftauthorization
 [Azure Roles and Microsoft Entra Roles - Microsoft Learn]: https://learn.microsoft.com/azure/role-based-access-control/rbac-and-directory-admin-roles
 [Azure RBAC Scope Overview - Microsoft Learn]: https://learn.microsoft.com/azure/role-based-access-control/scope-overview
@@ -582,6 +596,7 @@ can carry, and a managed identity produces the second of them.
 [Defender for Cloud Resource Manager Alerts - Microsoft Learn]: https://learn.microsoft.com/azure/defender-for-cloud/alerts-resource-manager
 [Defender for Resource Manager Alert Sources - Microsoft Learn]: https://learn.microsoft.com/azure/defender-for-cloud/defender-for-resource-manager-usage
 [CloudAuditEvents Table Schema - Microsoft Learn]: https://learn.microsoft.com/defender-xdr/advanced-hunting-cloudauditevents-table
+[CloudAuditEvents Azure Monitor Logs Reference - Microsoft Learn]: https://learn.microsoft.com/azure/azure-monitor/reference/tables/cloudauditevents
 [Azure RBAC What's New Changelog - Microsoft Learn]: https://learn.microsoft.com/azure/role-based-access-control/whats-new
 [Azure Resource Manager Security Baseline - Microsoft Learn]: https://learn.microsoft.com/security/benchmark/azure/baselines/azure-resource-manager-security-baseline
 [Defender for Cloud Tenant-Wide Permissions Management - Microsoft Learn]: https://learn.microsoft.com/azure/defender-for-cloud/tenant-wide-permissions-management
