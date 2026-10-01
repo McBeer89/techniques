@@ -208,7 +208,7 @@
       "toId": "n3",
       "type": "if transfer blocked",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r1",
@@ -216,7 +216,7 @@
       "toId": "n2",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r2",
@@ -224,7 +224,7 @@
       "toId": "n3",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r3",
@@ -232,7 +232,7 @@
       "toId": "n7",
       "type": "if invites restricted",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r4",
@@ -240,7 +240,7 @@
       "toId": "n8",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r5",
@@ -248,7 +248,7 @@
       "toId": "n1",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r6",
@@ -272,7 +272,7 @@
       "toId": "n4",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r9",
@@ -280,7 +280,7 @@
       "toId": "n5",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     }
   ]
 }

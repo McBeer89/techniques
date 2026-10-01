@@ -216,7 +216,7 @@
       "toId": "n2",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r2",
@@ -232,7 +232,7 @@
       "toId": "n7",
       "type": "if invites restricted",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r4",
@@ -240,7 +240,7 @@
       "toId": "n8",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r5",
@@ -248,7 +248,7 @@
       "toId": "n1",
       "type": "",
       "properties": {},
-      "style": { "arrow-color": "#f44e3b" }
+      "style": { "arrow-color": "#000000" }
     },
     {
       "id": "r6",
