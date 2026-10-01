@@ -95,7 +95,9 @@ sequenceDiagram
     Client->>API: Call API with access token
 ```
 
-The authorization code is designed to be **short-lived** and is intended to be
+The authorization code is designed to be **short-lived**, with a lifetime of
+about one minute for the Microsoft Entra v2 authorization code flow
+([authorization code flow][microsoft-auth-code-flow]), and is intended to be
 redeemed only by the client application that initiated the request.
 
 ### Authorization Endpoint
@@ -405,7 +407,7 @@ sign-in telemetry, such as events recorded in `NonInteractiveUserSignInLogs`.
 Following a suspicious authorization request, defenders may observe a token
 issuance or application sign-in event associated with the same application
 identifier present in the request. These events may originate from an unexpected
-IP address, device context, or location compared to the user’s normal
+IP address or location compared to the user’s normal
 authentication patterns, particularly if the authorization code is redeemed from
 a different environment than the one used during the initial authentication.
 
