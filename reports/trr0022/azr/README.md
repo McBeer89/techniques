@@ -309,4 +309,4 @@ right, which produces no telemetry of its own.
 [^4]: [Change the Directory of an Azure Subscription - Microsoft Learn](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/subscription-change-directory)
 [^5]: [Microsoft Entra Audit Activity Reference - Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities)
 [^6]: [Azure Built-in Roles - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)
-[^7]: [Azure-Sentinel SubscriptionMigration analytic rule, id 48c026d8-7f36-4a95-9568-6f1420d66e37 - GitHub](https://github.com/Azure/Azure-Sentinel)
+[^7]: [Azure-Sentinel SubscriptionMigration analytic rule, id 48c026d8-7f36-4a95-9568-6f1420d66e37 - GitHub](https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Azure%20Activity/Analytic%20Rules/SubscriptionMigration.yaml)
