@@ -80,7 +80,7 @@
         "Action": "Microsoft.Authorization/roleAssignments/write",
         "Role": "Owner",
         "RoleDefinitionId": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
-        "RequiredCallerRole": "Owner | User Access Administrator"
+        "RequiredCallerRole": "Owner | User Access Administrator | Role Based Access Control Administrator"
       },
       "style": {}
     },
@@ -92,7 +92,7 @@
       "properties": {
         "Role": "Owner",
         "RoleDefinitionId": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
-        "HeldVia": "Direct assignment | Group membership | Management-group inheritance | Root-scope User Access Administrator (elevateAccess)"
+        "HeldVia": "Direct assignment"
       },
       "style": {
         "border-color": "#808080",
@@ -170,7 +170,8 @@
       "properties": {
         "OperationName": "Invite external user",
         "Tenant": "Victim",
-        "GuestUserType": "#EXT#"
+        "UserType": "Guest",
+        "UpnMarker": "#EXT#"
       },
       "style": {}
     },

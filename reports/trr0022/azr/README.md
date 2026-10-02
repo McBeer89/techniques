@@ -30,8 +30,9 @@ cryptocurrency, or to seize control of a sensitive resource.
 
 Transferring a subscription requires the following pre-conditions:
 
-1. The directory's guest and subscription transfer settings need to allow
-    inviting guests and transferring subscriptions.
+1. The directory's subscription transfer settings need to allow transferring
+    subscriptions. Where a procedure routes through a guest identity, the
+    directory's guest invite settings must also allow the invitation.
 2. Access to an account with `Owner` privileges over the subscription to be
     transferred.
 3. For a transfer routed through a guest identity, the account must exist in
@@ -72,7 +73,7 @@ transfers were permitted by default. The policy consists of three settings:
 one blocking subscriptions from leaving the tenant, one blocking subscriptions
 from entering it, and a list of principals exempted from those blocks. Editing
 the policy requires a `Global Administrator` with elevated access to the root
-scope, the operation covered in trr9989 (AZT402).[^2]
+scope, the Azure root-scope elevate-access operation ([AZT402]).[^2]
 
 Once these conditions are met, the attacker can initiate the transfer. Changing
 a subscription's directory is an Azure Resource Manager operation under the
@@ -86,9 +87,11 @@ to complete the move.[^4]
 
 The same directory change can also occur as part of a billing-ownership
 transfer, which a billing role authorizes and an administrator accepts with
-`Microsoft.Subscription/subscriptions/acceptOwnership/action`. This reaches the
-same terminal effect as the change-directory flow and is an alternative route
-within the technique rather than a separate procedure.
+`Microsoft.Subscription/subscriptions/acceptOwnership/action`. This relocates
+control of the subscription as the change-directory flow does, but billing
+ownership moves to the recipient account rather than remaining with the victim,
+so it is an alternative route within the technique rather than a separate
+procedure.
 
 ![Screenshot of Subscriptions page, with the Change directory option highlighted.](images/change_directory.png)
 
@@ -106,8 +109,7 @@ information).
 Tenant owners can block the transfer of subscriptions in and out of the
 directory and can exempt specific principals from those blocks.[^2] Tenant
 owners can also control whether or not guests can be invited into the tenant,
-from what domains, and what permissions they can hold (for example, if they
-could be an owner of a subscription).
+from what domains, and the level of directory access guests receive.
 
 ![Azure Portal Managing Subscription Policies](images/manage_sub_policies.png)
 
@@ -115,10 +117,10 @@ could be an owner of a subscription).
 
 #### Guest Settings Modifications
 
-When the guest access policy is changed, Entra ID generates an audit log with an
-`ActivityDisplayName` of `Update policy` and a `TargetResources.displayName` of
-`B2BManagementPolicy`. The `TargetResources.modifiedProperties.displayName`
-field will hold a value showing `PolicyDetails`, and `oldValue` and `newValue`
+When the collaboration restrictions policy is changed, Entra ID generates an
+audit log with an `ActivityDisplayName` of `Update policy` and a
+`TargetResources.displayName` of `B2BManagementPolicy`. The
+`TargetResources.modifiedProperties` entries carry `oldValue` and `newValue`
 fields showing the policy before and after the change.
 
 The policy controlling collaboration restrictions is titled
@@ -129,14 +131,13 @@ domains. The setting allowing invitations to any domain will configure the
 policy as an empty blocklist.
 
 The setting that controls who, if anyone, can invite guests is stored in the
-Entra `authorizationPolicy` (the `allowInvitesFrom` property), and a change to
-it is logged in the Entra audit log with an `ActivityDisplayName` of
-`Update authorization policy`. The legacy `Set directory feature on tenant`
-activity, which recorded a `DirectoryFeatures` property containing an
-`EnabledFeatures` array that held `RestrictInvitations` when guests were
-prohibited, is an Azure AD-era event; it still appears in the Entra audit
-activities reference but is no longer the documented event for this
-setting.[^5]
+Entra `authorizationPolicy` (the `allowInvitesFrom` property). The Entra audit
+activities reference lists an `Update authorization policy` activity under the
+`AuthorizationPolicy` category and a legacy `Set directory feature on tenant`
+activity under `DirectoryManagement`; the latter recorded a `DirectoryFeatures`
+property whose `EnabledFeatures` array held `RestrictInvitations` when guests
+were prohibited. The documentation does not state which of the two activities
+fires when this setting is changed.[^5]
 
 #### Inviting Guests
 
@@ -144,8 +145,9 @@ When an invitation is sent to a guest, an Entra audit log is generated with an
 `OperationName` of `Invite external user`. This log shows the external user's
 email and which internal user sent the invitation. When the invited guest
 redeems the invitation, a second Entra audit log is generated with an
-`OperationName` of `Redeem external user invite`, recorded in the inviting
-(victim) tenant.[^5]
+`OperationName` of `Redeem external user invite`, recorded in the tenant that
+issued the invitation (the victim tenant in Procedure A, the attacker tenant in
+Procedure B).[^5]
 
 #### Adding Owners
 
@@ -157,7 +159,7 @@ subscription. The `operationName` field will read
 #### Modifying the Transfer Policy
 
 The subscription transfer policy is a tenant-scoped resource. Modifying it
-invokes `Microsoft.Subscription/Policies/write`, a tenant-level directory
+invokes `Microsoft.Subscription/Policies/write`,[^8] a tenant-level directory
 activity operation rather than a subscription-scoped one.[^2]
 
 #### Transferring the Subscription
@@ -172,9 +174,11 @@ activities reference lists `Suspending Source Tenant Subscriptions` and
 `Deleting Source Tenant subscriptions` activities.[^5]
 
 The acceptance step is carried out by an administrator in the destination
-(attacker) tenant and is recorded there. The subscription's own Activity Log
-travels with it to the destination, so the source tenant retains only the
-records it had already exported before the move.
+(attacker) tenant. The subscription's own Activity Log is scoped to the
+subscription and travels with it to the destination; a source tenant that had
+exported those records to its own workspace before the move keeps that exported
+copy. The documentation does not state which records the accept step produces,
+or in which tenant each lands.
 
 ## Procedures
 
@@ -199,8 +203,7 @@ attacker must first modify the subscription transfer policy, which requires the
 elevated access described in the [Technical Background] section.
 
 At this point the attacker can initiate the subscription transfer. The victim
-loses access to the subscription and its resources and cannot modify billing
-information.
+loses access to the subscription and its resources.
 
 #### Detection Data Model
 
@@ -221,8 +224,9 @@ This procedure establishes the required account in the opposite direction from
 Procedure A: the attacker controls a member account in the victim's tenant and
 invites it into the attacker's tenant as a guest. That account must hold
 `Owner` over the target subscription; if it is not already an owner, it is
-granted the role first, which requires a caller that already holds `Owner` or
-`User Access Administrator` at that scope.
+granted the role first, which requires a caller that already holds `Owner`,
+`User Access Administrator`, or `Role Based Access Control Administrator` at
+that scope.
 
 From the point the account holds `Owner`, this procedure follows the same
 change-tenant pipeline as Procedure A, described in the [Technical Background]
@@ -243,13 +247,15 @@ of its own.
 
 ### Procedure C: Hijack via a two-party change-tenant request
 
-This procedure invites no guest into either tenant. The attacker holds, or
-acquires, `Owner` over the target subscription and drives the two-party
-change-tenant flow described in the [Technical Background] section directly,
+This procedure invites no guest into either tenant. The attacker holds `Owner`
+over the target subscription and drives the two-party change-tenant flow
+described in the [Technical Background] section directly,
 sending the request to a destination tenant the attacker controls. Microsoft's
-documentation does not establish whether the initiator must also hold an
-identity in that destination tenant, so this procedure covers only the
-documented request and accept steps.
+documentation states that the account making the change exists in both the
+source and destination directories; the current flow also allows the request to
+be emailed to a separate acceptor, and whether that path removes the
+destination-identity requirement is not addressed in the documentation. This
+procedure covers only the documented request and accept steps.
 
 Because the acting account already holds `Owner`, the path enters the shared
 change-tenant pipeline at the request step with no guest-invitation or
@@ -291,6 +297,7 @@ right, which produces no telemetry of its own.
 
 [AZT507.3]: https://microsoft.github.io/Azure-Threat-Research-Matrix/Persistence/AZT507/AZT507-3/
 [T1496]: https://attack.mitre.org/techniques/T1496/
+[AZT402]: https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT402/AZT402/
 [Transfer Subscriptions - Microsoft Learn]: https://learn.microsoft.com/en-us/azure/role-based-access-control/transfer-subscription
 [Associate Azure Subscriptions to a Directory - Microsoft Learn]: https://learn.microsoft.com/en-us/entra/fundamentals/how-subscriptions-associated-directory
 [Configure External Collab Settings - Microsoft Learn]: https://learn.microsoft.com/en-us/entra/external-id/external-collaboration-settings-configure
@@ -310,3 +317,4 @@ right, which produces no telemetry of its own.
 [^5]: [Microsoft Entra Audit Activity Reference - Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/reference-audit-activities)
 [^6]: [Azure Built-in Roles - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)
 [^7]: [Azure-Sentinel SubscriptionMigration analytic rule, id 48c026d8-7f36-4a95-9568-6f1420d66e37 - GitHub](https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Azure%20Activity/Analytic%20Rules/SubscriptionMigration.yaml)
+[^8]: [Azure resource provider operations - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/permissions/general)
