@@ -96,8 +96,8 @@ sequenceDiagram
 ```
 
 The authorization code is designed to be **short-lived**, with a lifetime of
-about one minute for the Microsoft Entra v2 authorization code flow
-([authorization code flow][microsoft-auth-code-flow]), and is intended to be
+about one minute for the Microsoft Entra v2
+[authorization code flow][microsoft-auth-code-flow], and is intended to be
 redeemed only by the client application that initiated the request.
 
 ### Authorization Endpoint
@@ -176,20 +176,24 @@ a `localhost` reply URL used by command-line or development-oriented clients.
 
 > [!NOTE]
 >
-> You can list applications in your tenant that have a `localhost` reply URL
-> registered with the following PowerShell script:
+> You can list the Microsoft first-party applications in your tenant that
+> have reply URLs registered with the following PowerShell script. Microsoft
+> first-party service principals are owned by the Microsoft Services tenant
+> `f8cdef31-a31e-4b4a-93e4-5f571e91255a`
+> ([Verify first-party Microsoft applications][microsoft-first-party-apps]):
 >
 > ```powershell
-> Connect-MgGraph -scope "Directory.Read.All"
+> Connect-MgGraph -Scopes "Application.Read.All"
+> $microsoft = "f8cdef31-a31e-4b4a-93e4-5f571e91255a"
 > Get-MgServicePrincipal -All | Where-Object {
->     $_.ReplyUrls -like "*localhost*"
-> }
+>     $_.AppOwnerOrganizationId -eq $microsoft -and $_.ReplyUrls
+> } | Select-Object DisplayName, AppId, ReplyUrls
 > ```
 >
-> The script lists only applications that have a service principal in the
-> tenant, and the `ReplyUrls` property does not show whether a URL is
-> registered as a web or a mobile and desktop redirect
-> ([servicePrincipal resource type][microsoft-graph-sp]).
+> First-party applications with no service principal in your tenant do not
+> appear in the output. [EntraScopes] lists each Microsoft first-party
+> application with its client type and redirect URIs, independent of any
+> tenant.
 
 This validation is important for procedure scoping. A non-localhost reply URL
 would only support direct attacker collection if the first-party application has
@@ -441,7 +445,6 @@ helps avoid treating log records as steps in the attack itself.
 - [Microsoft - Verify first-party Microsoft applications in sign-in
   reports][microsoft-first-party-apps]
 - [Microsoft - Non-interactive user sign-ins][microsoft-noninteractive]
-- [Microsoft Graph - servicePrincipal resource type][microsoft-graph-sp]
 
 [T1528]: https://attack.mitre.org/techniques/T1528/
 [push-consentfix]: https://pushsecurity.com/blog/consentfix
@@ -464,5 +467,3 @@ helps avoid treating log records as steps in the attack itself.
   https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/governance/verify-first-party-apps-sign-in
 [microsoft-noninteractive]:
   https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins
-[microsoft-graph-sp]:
-  https://learn.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
