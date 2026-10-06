@@ -177,8 +177,9 @@ a `localhost` reply URL used by command-line or development-oriented clients.
 > [!NOTE]
 >
 > You can list the Microsoft first-party applications in your tenant that
-> have reply URLs registered with the following PowerShell script. Microsoft
-> first-party service principals are owned by the Microsoft Services tenant
+> have a `localhost` reply URL registered with the following PowerShell
+> script. Microsoft first-party service principals are owned by the
+> Microsoft Services tenant
 > `f8cdef31-a31e-4b4a-93e4-5f571e91255a`
 > ([Verify first-party Microsoft applications][microsoft-first-party-apps]):
 >
@@ -186,7 +187,8 @@ a `localhost` reply URL used by command-line or development-oriented clients.
 > Connect-MgGraph -Scopes "Application.Read.All"
 > $microsoft = "f8cdef31-a31e-4b4a-93e4-5f571e91255a"
 > Get-MgServicePrincipal -All | Where-Object {
->     $_.AppOwnerOrganizationId -eq $microsoft -and $_.ReplyUrls
+>     $_.AppOwnerOrganizationId -eq $microsoft -and
+>     $_.ReplyUrls -like "*localhost*"
 > } | Select-Object DisplayName, AppId, ReplyUrls
 > ```
 >
