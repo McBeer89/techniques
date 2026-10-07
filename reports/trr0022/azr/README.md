@@ -40,6 +40,8 @@ describes a two-party request and accept workflow: a subscription `Owner` in
 the source directory sends a change-tenant request naming the destination
 tenant, and an Entra administrator in the destination directory accepts it. The
 requester can be that acceptor or can send the request to another party.[^4]
+The request and accept operations first appeared in the
+`Microsoft.Subscription` API version `2024-08-01-preview`.[^11]
 
 This gives an attacker two approaches, which differ in whether one account or
 two carry out the move:
@@ -347,3 +349,4 @@ right, which produces no telemetry of its own.
 [^8]: [Azure resource provider operations - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/permissions/general)
 [^9]: [Associate Azure Subscriptions to a Directory - Microsoft Learn](https://learn.microsoft.com/en-us/entra/fundamentals/how-subscriptions-associated-directory)
 [^10]: [Transfer Subscriptions - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/transfer-subscription)
+[^11]: [Add Initiate, Get and Accept Subscription Change Directory Api with new version, azure-rest-api-specs PR 29912 - GitHub](https://github.com/Azure/azure-rest-api-specs/pull/29912)
