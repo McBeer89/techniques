@@ -28,22 +28,85 @@ cryptocurrency, or to seize control of a sensitive resource.
 
 ## Technical Background
 
-Transferring a subscription requires the following pre-conditions:
+### Transfer approaches
 
-1. The directory's subscription transfer settings need to allow transferring
-    subscriptions. Where a procedure routes through a guest identity, the
-    directory's guest invite settings must also allow the invitation.
-2. Access to an account with `Owner` privileges over the subscription to be
-    transferred.
-3. For a transfer routed through a guest identity, the account must exist in
-    both the current directory and in the new directory. There are multiple
-    ways to meet this requirement, but they all require that guest access be
-    enabled for the tenant. For example, the attacker could invite an account
-    from their directory into the victim directory or set up an account in the
-    victim directory as a guest in their own directory. Additional details can
-    be found on Microsoft's Learn site.[^1]
+Changing a subscription's directory is an Azure Resource Manager operation
+under the `Microsoft.Subscription` resource provider, not a Microsoft Graph API
+call. Microsoft's documentation describes the change two ways. The Entra
+guidance for associating a subscription with a directory describes a
+single-step change made by an account that "exists in both the current
+directory and in the new directory."[^9] The change-directory guidance
+describes a two-party request and accept workflow: a subscription `Owner` in
+the source directory sends a change-tenant request naming the destination
+tenant, and an Entra administrator in the destination directory accepts it. The
+requester can be that acceptor or can send the request to another party.[^4]
 
-Meeting these conditions might require modifying the guest permissions in the
+This gives an attacker two approaches, which differ in whether one account or
+two carry out the move:
+
+- **Two-party handoff.** A subscription `Owner` in the victim tenant sends the
+  request, and a separate identity accepts it in the destination tenant. No
+  account has to exist in both directories, so guest invitation settings in
+  either tenant play no part. This is Procedure C.
+- **Single-account transfer.** One account holds the requisite permissions in
+  both the source (victim) and destination (attacker-controlled) tenant: it is
+  a subscription `Owner` in the source directory and also exists in the
+  destination directory. It can make the single-step change or send the
+  request and accept it itself. This is Procedures A and B, which differ in
+  which tenant issues the guest invitation that places the account in both
+  directories. The victim tenant's guest invite settings and collaboration
+  restrictions apply only to Procedure A, because Procedure B's invitation is
+  issued and recorded by the attacker's tenant.
+
+Whether the two-party handoff removes the dual-directory requirement that the
+Entra guidance states is not addressed in the documentation.
+
+### Requirements for both approaches
+
+Both approaches need an account with `Owner` privileges over the subscription
+to be transferred. Microsoft's transfer guidance states that the `Owner` role
+"must be directly assigned without conditions, group assignment, or Privileged
+Identity Management (PIM)."[^10]
+
+The directory's subscription transfer policy must also permit the move. On May
+1, 2026, Microsoft changed this policy's default to block subscription
+transfers both into and out of a tenant; before that date, transfers were
+permitted by default. The policy consists of three settings: one blocking
+subscriptions from leaving the tenant, one blocking subscriptions from entering
+it, and a list of principals exempted from those blocks. Editing the policy
+requires a `Global Administrator` with elevated access to the root scope, the
+Azure root-scope elevate-access operation ([AZT402]).[^2]
+
+The same directory change can also occur as part of a billing-ownership
+transfer, which a billing role authorizes and an administrator accepts with
+`Microsoft.Subscription/subscriptions/acceptOwnership/action`. This relocates
+control of the subscription as the change-directory flow does, but billing
+ownership moves to the recipient account rather than remaining with the victim,
+so it is an alternative route within the technique rather than a separate
+procedure.
+
+![Screenshot of Subscriptions page, with the Change directory option highlighted.](images/change_directory.png)
+
+Billing information for a subscription is retained when the subscription is
+transferred, so an attacker can effectively hijack a subscription and deploy
+resources that the victim is paying for until the billing has been modified
+(this would presumably require intervention from Microsoft Support, since the
+victim would no longer have access to the subscription to change the billing
+information).
+
+![Image showing billing warning when transferring subscriptions](images/change_directory_billing.png)
+
+### Additional requirements for the single-account transfer
+
+The account must exist in both the current directory and in the new directory.
+There are multiple ways to meet this requirement, but they all require that
+guest access be enabled for the tenant that issues the invitation. For
+example, the attacker could invite an account from their directory into the
+victim directory or set up an account in the victim directory as a guest in
+their own directory. Additional details can be found on Microsoft's Learn
+site.[^1]
+
+Meeting this condition might require modifying the guest permissions in the
 victim tenant to allow guests from the attacker's tenant. There are two Entra
 external collaboration settings that control guest access. The first is the
 "Guest invite settings" that control who, if anyone, is allowed to invite
@@ -66,56 +129,22 @@ The "Collaboration restrictions" setting allows one of three options:
 Cross-tenant access settings are also checked at the time an invitation is
 sent, alongside the allow and block domain list.[^3]
 
-The subscription transfer policy is the second setting that must permit the
-move. On May 1, 2026, Microsoft changed this policy's default to block
-subscription transfers both into and out of a tenant; before that date,
-transfers were permitted by default. The policy consists of three settings:
-one blocking subscriptions from leaving the tenant, one blocking subscriptions
-from entering it, and a list of principals exempted from those blocks. Editing
-the policy requires a `Global Administrator` with elevated access to the root
-scope, the Azure root-scope elevate-access operation ([AZT402]).[^2]
-
-Once these conditions are met, the attacker can initiate the transfer. Changing
-a subscription's directory is an Azure Resource Manager operation under the
-`Microsoft.Subscription` resource provider, not a Microsoft Graph API call.
-
-The current change-directory flow is a two-party request and accept handshake.
-A subscription `Owner` in the source directory sends a change-tenant request
-that names the destination tenant and a destination owner by object ID or
-email, and an administrator in the destination directory accepts the request
-to complete the move.[^4]
-
-The same directory change can also occur as part of a billing-ownership
-transfer, which a billing role authorizes and an administrator accepts with
-`Microsoft.Subscription/subscriptions/acceptOwnership/action`. This relocates
-control of the subscription as the change-directory flow does, but billing
-ownership moves to the recipient account rather than remaining with the victim,
-so it is an alternative route within the technique rather than a separate
-procedure.
-
-![Screenshot of Subscriptions page, with the Change directory option highlighted.](images/change_directory.png)
-
-Billing information for a subscription is retained when the subscription is
-transferred, so an attacker can effectively hijack a subscription and deploy
-resources that the victim is paying for until the billing has been modified
-(this would presumably require intervention from Microsoft Support, since the
-victim would no longer have access to the subscription to change the billing
-information).
-
-![Image showing billing warning when transferring subscriptions](images/change_directory_billing.png)
-
 ### Prevention
 
 Tenant owners can block the transfer of subscriptions in and out of the
 directory and can exempt specific principals from those blocks.[^2] Tenant
 owners can also control whether or not guests can be invited into the tenant,
-from what domains, and the level of directory access guests receive.
+from what domains, and the level of directory access guests receive. The
+guest controls apply only to the single-account transfer.
 
 ![Azure Portal Managing Subscription Policies](images/manage_sub_policies.png)
 
 ### Logging
 
 #### Guest Settings Modifications
+
+The records in this section and in Inviting Guests apply only to the
+single-account transfer.
 
 When the collaboration restrictions policy is changed, Entra ID generates an
 audit log with an `ActivityDisplayName` of `Update policy` and a
@@ -190,10 +219,9 @@ or in which tenant each lands.
 
 ### Procedure A: Hijack via an external guest user
 
-In order to hijack a subscription, an attacker needs a single account who has
-the requisite permissions in both the source (victim) and destination
-(attacker-controlled) tenant.  One way to accomplish this is to invite a user
-from the attacker's tenant into the victim's tenant as a guest.
+This procedure is a single-account transfer, described in the
+[Technical Background] section. The attacker establishes the account by
+inviting a user from their tenant into the victim's tenant as a guest.
 
 The guest account would then need to be granted the `Owner` role over the target
 subscription.
@@ -220,9 +248,10 @@ of its own.
 
 ### Procedure B: Hijack via an internal user
 
-This procedure establishes the required account in the opposite direction from
-Procedure A: the attacker controls a member account in the victim's tenant and
-invites it into the attacker's tenant as a guest. That account must hold
+This procedure is a single-account transfer that establishes the account in
+the opposite direction from Procedure A: the attacker controls a member account
+in the victim's tenant and invites it into the attacker's tenant as a guest.
+That account must hold
 `Owner` over the target subscription; if it is not already an owner, it is
 granted the role first, which requires a caller that already holds `Owner`,
 `User Access Administrator`, or `Role Based Access Control Administrator` at
@@ -247,15 +276,13 @@ of its own.
 
 ### Procedure C: Hijack via a two-party change-tenant request
 
-This procedure invites no guest into either tenant. The attacker holds `Owner`
-over the target subscription and drives the two-party change-tenant flow
-described in the [Technical Background] section directly,
-sending the request to a destination tenant the attacker controls. Microsoft's
-documentation states that the account making the change exists in both the
-source and destination directories; the current flow also allows the request to
-be emailed to a separate acceptor, and whether that path removes the
-destination-identity requirement is not addressed in the documentation. This
-procedure covers only the documented request and accept steps.
+This procedure is the two-party handoff described in the [Technical Background]
+section. The attacker holds `Owner` over the target subscription and sends the
+change-tenant request to a destination tenant the attacker controls, where
+a separate identity accepts it. No guest is invited into either tenant. Whether
+this path removes the dual-directory requirement stated in the Entra guidance
+is not addressed in the documentation; this procedure covers only the
+documented request and accept steps.
 
 Because the acting account already holds `Owner`, the path enters the shared
 change-tenant pipeline at the request step with no guest-invitation or
@@ -318,3 +345,5 @@ right, which produces no telemetry of its own.
 [^6]: [Azure Built-in Roles - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)
 [^7]: [Azure-Sentinel SubscriptionMigration analytic rule, id 48c026d8-7f36-4a95-9568-6f1420d66e37 - GitHub](https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Azure%20Activity/Analytic%20Rules/SubscriptionMigration.yaml)
 [^8]: [Azure resource provider operations - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/permissions/general)
+[^9]: [Associate Azure Subscriptions to a Directory - Microsoft Learn](https://learn.microsoft.com/en-us/entra/fundamentals/how-subscriptions-associated-directory)
+[^10]: [Transfer Subscriptions - Microsoft Learn](https://learn.microsoft.com/en-us/azure/role-based-access-control/transfer-subscription)
