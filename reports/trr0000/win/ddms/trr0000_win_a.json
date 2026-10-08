@@ -1,0 +1,412 @@
+{
+  "style": {
+    "font-family": "sans-serif",
+    "background-color": "#ffffff",
+    "background-image": "",
+    "background-size": "100%",
+    "node-color": "#ffffff",
+    "border-width": 4,
+    "border-color": "#000000",
+    "radius": 50,
+    "node-padding": 5,
+    "node-margin": 2,
+    "outside-position": "auto",
+    "node-icon-image": "",
+    "node-background-image": "",
+    "icon-position": "inside",
+    "icon-size": 64,
+    "caption-position": "inside",
+    "caption-max-width": 200,
+    "caption-color": "#000000",
+    "caption-font-size": 16,
+    "caption-font-weight": "normal",
+    "label-position": "outside",
+    "label-display": "pill",
+    "label-color": "#000000",
+    "label-background-color": "#ffffff",
+    "label-border-color": "#000000",
+    "label-border-width": 2,
+    "label-font-size": 14,
+    "label-padding": 5,
+    "label-margin": 4,
+    "directionality": "directed",
+    "detail-position": "inline",
+    "detail-orientation": "parallel",
+    "arrow-width": 5,
+    "arrow-color": "#000000",
+    "margin-start": 5,
+    "margin-end": 5,
+    "margin-peer": 20,
+    "attachment-start": "normal",
+    "attachment-end": "normal",
+    "relationship-icon-image": "",
+    "type-color": "#000000",
+    "type-background-color": "#ffffff",
+    "type-border-color": "#000000",
+    "type-border-width": 0,
+    "type-font-size": 16,
+    "type-padding": 5,
+    "property-position": "outside",
+    "property-alignment": "colon",
+    "property-color": "#000000",
+    "property-font-size": 16,
+    "property-font-weight": "normal"
+  },
+  "nodes": [
+    {
+      "id": "n0",
+      "position": {
+        "x": 100,
+        "y": 150
+      },
+      "caption": "Write Lure File",
+      "labels": [
+        "Sysmon 11 (FileCreate)",
+        "Security 5145 (Detailed File Share)"
+      ],
+      "properties": {
+        "Location": "Local volume, network share",
+        "File Type": "lnk, scf, url, library-ms, searchConnector-ms, theme, Office document, HTML",
+        "Reference": "UNC path, file:// URL"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n1",
+      "position": {
+        "x": 550,
+        "y": 150
+      },
+      "caption": "Parse Lure Content",
+      "labels": [
+        "Security 4663 (File System)"
+      ],
+      "properties": {
+        "Parser": "explorer.exe, Office, Outlook, HTML renderer",
+        "Lure Container": "File, email message",
+        "Reference Field (file)": "icon location, document template, search connector url, theme resource, file://",
+        "Reference Field (message)": "PidLidReminderFileParameter"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n2",
+      "position": {
+        "x": 550,
+        "y": 950
+      },
+      "caption": "Receive RPC",
+      "labels": [
+        "WFP 5156 (Filtering Platform Connection)",
+        "Security 4624 (Logon)"
+      ],
+      "properties": {
+        "Interface": "MS-EFSR, MS-RPRN, MS-DFSNM, MS-FSRVP, MS-EVEN",
+        "Endpoint (pipe name)": "efsrpc, lsarpc, spoolss, NETDFS, FssagentRpc, eventlog",
+        "Protocol Sequence": "ncacn_np, ncacn_ip_tcp (MS-RPRN)",
+        "Direction": "Inbound",
+        "Logon Type": "3",
+        "Caller (MS-RPRN)": "Any authenticated user (domain controller spooler)",
+        "Caller (MS-EFSR)": "After updates: non-null session on lsarpc; RPC_C_AUTHN_LEVEL_PKT_PRIVACY",
+        "Caller (MS-DFSNM)": "Any user (connect); namespace administrator (method)",
+        "Caller (MS-FSRVP)": "Administrators or Backup Operators",
+        "Caller (MS-EVEN)": "Authenticated client"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n3",
+      "position": {
+        "x": 1000,
+        "y": 150
+      },
+      "caption": "Open Remote Path",
+      "labels": [],
+      "properties": {
+        "Router": "MUP",
+        "Redirector": "SMB (LanmanWorkstation, mrxsmb.sys), WebDAV (WebClient)",
+        "Server Name Form": "NetBIOS name, FQDN, IP address",
+        "Principal Context": "Service account, interactive user",
+        "Credential Presented (service)": "computer credentials (LocalSystem, NetworkService); anonymous (LocalService)",
+        "Credential Presented (user)": "user logon session"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n4",
+      "position": {
+        "x": 1500,
+        "y": 520
+      },
+      "caption": "Resolve Host Name",
+      "labels": [
+        "Sysmon 22 (DNSEvent)"
+      ],
+      "properties": {
+        "Name Form": "NetBIOS name, FQDN"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n5",
+      "position": {
+        "x": 2100,
+        "y": 550
+      },
+      "caption": "Establish Outbound Connection",
+      "labels": [
+        "Sysmon 3 (NetworkConnect)",
+        "WFP 5156 (Filtering Platform Connection)"
+      ],
+      "properties": {
+        "Direction": "Outbound",
+        "Transport": "SMB over TCP 445, HTTP or HTTPS (WebDAV, @SSL / @port forms)",
+        "Service (WebDAV)": "WebClient",
+        "Credential Rule (WebDAV)": "dotless name, no proxy; proxy set, host bypassed; AuthForwardServerList match",
+        "Connection": "new transport connection; existing connection reused"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n6",
+      "position": {
+        "x": 2100,
+        "y": 150
+      },
+      "caption": "Host Listener",
+      "labels": [],
+      "properties": {
+        "Listener Protocol": "SMB, HTTP or HTTPS (WebDAV, @SSL / @port forms)"
+      },
+      "style": {
+        "border-color": "#808080",
+        "node-color": "#cccccc",
+        "border-width": 3,
+        "caption-font-size": 16,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n7",
+      "position": {
+        "x": 2650,
+        "y": 900
+      },
+      "caption": "Request Service Ticket",
+      "labels": [
+        "Security 4769 (A Kerberos service ticket was requested)"
+      ],
+      "properties": {
+        "Request": "TGS request",
+        "SPN (SMB)": "cifs/<host name in the path>; cifs/<unmarshaled target name> (marshaled target)",
+        "KDC": "Domain controller",
+        "Outcome": "ticket issued; KDC_ERR_S_PRINCIPAL_UNKNOWN"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n8",
+      "position": {
+        "x": 3200,
+        "y": 550
+      },
+      "caption": "Send Authentication Message",
+      "labels": [
+        "NTLM 4020 (NTLM Client Authentication)"
+      ],
+      "properties": {
+        "Protocol": "NTLM, Kerberos",
+        "Message": "NTLM challenge response, Kerberos AP_REQ",
+        "Carrier": "SMB2 SESSION_SETUP, HTTP authentication (WebDAV)"
+      },
+      "style": {
+        "border-color": "#0062b1",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r0",
+      "fromId": "n0",
+      "toId": "n1",
+      "type": "prerequisite (file-based lure)",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r1",
+      "fromId": "n1",
+      "toId": "n3",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r2",
+      "fromId": "n2",
+      "toId": "n3",
+      "type": "server opens the path through MUP",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r3",
+      "fromId": "n3",
+      "toId": "n4",
+      "type": "SMB, named host",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r4",
+      "fromId": "n3",
+      "toId": "n4",
+      "type": "WebDAV, named host, credentials sent",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r5",
+      "fromId": "n3",
+      "toId": "n5",
+      "type": "SMB, IP literal",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r6",
+      "fromId": "n4",
+      "toId": "n5",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b"
+      }
+    },
+    {
+      "id": "r7",
+      "fromId": "n6",
+      "toId": "n5",
+      "type": "prerequisite",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r8",
+      "fromId": "n5",
+      "toId": "n7",
+      "type": "SMB, named host, Kerberos usable, no unexpired SPN ticket",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r9",
+      "fromId": "n5",
+      "toId": "n8",
+      "type": "WebDAV, IP (default), unexpired SPN ticket, or Kerberos unusable",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    },
+    {
+      "id": "r10",
+      "fromId": "n7",
+      "toId": "n8",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b"
+      }
+    },
+    {
+      "id": "r11",
+      "fromId": "n3",
+      "toId": "n5",
+      "type": "WebDAV IPv4: AuthForwardServerList or proxy set and bypassed",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b",
+        "detail-orientation": "parallel"
+      }
+    }
+  ]
+}
