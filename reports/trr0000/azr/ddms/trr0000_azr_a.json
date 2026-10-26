@@ -62,8 +62,7 @@
       "caption": "Initiate Device Code Request",
       "labels": [],
       "properties": {
-        "Endpoint": "/oauth2/v2.0/devicecode",
-        "Response": "device_code, user_code, verification_uri"
+        "Endpoint": "/oauth2/v2.0/devicecode"
       },
       "style": {
         "border-color": "#000000",
@@ -105,7 +104,6 @@
       "caption": "Redeem Device Code",
       "labels": [],
       "properties": {
-        "Endpoint": "/oauth2/v2.0/token",
         "GrantType": "urn:ietf:params:oauth:grant-type:device_code"
       },
       "style": {

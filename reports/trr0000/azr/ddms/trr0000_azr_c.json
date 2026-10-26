@@ -62,7 +62,6 @@
       "caption": "Execute Code on Azure Compute",
       "labels": [],
       "properties": {
-        "ComputeType": "Azure VM | App Service | Function App | Container Instance | AKS node | Container App | Service Fabric | Automation Account",
         "IdentityType": "SystemAssigned | UserAssigned"
       },
       "style": {
@@ -87,11 +86,8 @@
         "Sysmon 3 (NetworkConnect)"
       ],
       "properties": {
-        "Endpoint": "http://169.254.169.254/metadata/identity/oauth2/token",
-        "AppServiceEndpointEnvVar": "IDENTITY_ENDPOINT",
-        "RequiredHeader": "Metadata: true",
-        "AppServiceHeader": "X-IDENTITY-HEADER",
-        "ServiceFabricHeader": "Secret"
+        "Endpoint": "169.254.169.254/metadata/identity/oauth2/token | IDENTITY_ENDPOINT",
+        "Header": "Metadata: true | X-IDENTITY-HEADER | Secret"
       },
       "style": {
         "border-color": "#000000",

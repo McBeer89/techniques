@@ -85,7 +85,7 @@
         "Entra SigninLogs (Interactive sign-in)"
       ],
       "properties": {
-        "Endpoint": "/oauth2/v2.0/authorize | /v2.0/adminconsent | /adminconsent"
+        "Endpoint": "/oauth2/v2.0/authorize | /v2.0/adminconsent"
       },
       "style": {
         "border-color": "#000000",
@@ -110,7 +110,6 @@
         "Entra AuditLogs (Add app role assignment to service principal)"
       ],
       "properties": {
-        "Category": "ApplicationManagement",
         "GrantObject": "OAuth2PermissionGrant | appRoleAssignment",
         "ConsentType": "Principal | AllPrincipals"
       },
@@ -134,7 +133,6 @@
         "Entra AADNonInteractiveUserSignInLogs (Authorization code redemption)"
       ],
       "properties": {
-        "Endpoint": "/oauth2/v2.0/token",
         "GrantType": "authorization_code",
         "ClientAuth": "client_secret | client_assertion"
       },
@@ -158,10 +156,8 @@
         "Entra AADServicePrincipalSignInLogs (Client credentials flow sign-in)"
       ],
       "properties": {
-        "Endpoint": "/oauth2/v2.0/token",
         "GrantType": "client_credentials",
-        "ClientAuth": "client_secret | client_assertion",
-        "ResultType": "0"
+        "ClientAuth": "client_secret | client_assertion"
       },
       "style": {
         "border-color": "#000000",
