@@ -450,10 +450,10 @@ or service account authorizes that account's pods instead.
 
 ## Available Emulation Tests
 
-| ID      | Link                          |
-|---------|-------------------------------|
-| T1528-1 | [Atomic Test 1 - Blob Upload] |
-| T1528-2 | [Atomic Test 2 - File Share]  |
+| ID      | Link                                                        |
+|---------|-------------------------------------------------------------|
+| T1528-1 | [Atomic Test 1 - Functions Code Injection via Blob Upload]  |
+| T1528-2 | [Atomic Test 2 - Functions Code Injection via File Share]   |
 
 ## References
 
@@ -535,8 +535,8 @@ or service account authorizes that account's pods instead.
 [Sekoia - EvilTokens Device Code Phishing Part 1]: https://www.sekoia.com/blog/new-widespread-eviltokens-kit-device-code-phishing-as-a-service-part-1
 [Proofpoint - Phishing for Device Code Authorization Account Takeover]: https://www.proofpoint.com/us/blog/threat-insight/access-granted-phishing-device-code-authorization-account-takeover
 [Atomic Red Team T1528]: https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1528
-[Atomic Test 1 - Blob Upload]: https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1528
-[Atomic Test 2 - File Share]: https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1528
+[Atomic Test 1 - Functions Code Injection via Blob Upload]: https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1528/T1528.md#atomic-test-1-azure---functions-code-upload---functions-code-injection-via-blob-upload
+[Atomic Test 2 - Functions Code Injection via File Share]: https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1528/T1528.md#atomic-test-2-azure---functions-code-upload---functions-code-injection-via-file-share-modification-to-retrieve-the-functions-identity-access-token
 
 [^1]: [Microsoft Identity Platform OAuth 2.0 and OpenID Connect Protocols](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols)
 [^2]: [Microsoft Identity Platform OAuth 2.0 Device Authorization Grant](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code)
