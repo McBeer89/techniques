@@ -304,9 +304,9 @@ user's authentication at the authorization endpoint is an interactive sign-in,
 in which the user provides an authentication factor. The client's redemption of
 the code at the token endpoint is a non-interactive sign-in, in which the client
 uses a token or code on the user's behalf.[^2] Redeeming an authorization code
-for an access token and refresh token is one of the activities the
-non-interactive user sign-in log captures.[^3] The redirect that delivers the
-code to the reply URL is a browser request to the client, not to Entra ID.
+for an access token and refresh token is captured in the non-interactive user
+sign-in log.[^3] The redirect that delivers the code to the reply URL is a
+browser request to the client, not to Entra ID.
 
 Both events record the user principal name, the application ID, the client IP
 address and its autonomous system number, the device details including the
