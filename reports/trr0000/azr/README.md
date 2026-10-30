@@ -40,7 +40,7 @@ gives the technique a persistence use as well as a privilege-escalation one.
 
 Microsoft Entra ID and Azure resources are secured by two independent
 authorization systems. Entra directory roles govern directory objects
-such as users, groups, applications, domains, and licensing. Azure RBAC
+such as users, groups, applications, domains, and licenses. Azure RBAC
 governs Azure resources through Azure Resource Manager. Microsoft Entra
 role assignments do not grant access to Azure resources, Azure role
 assignments do not grant access to Microsoft Entra ID, and by default the
@@ -63,8 +63,8 @@ at `/`,[^4] so no custom role reaches root scope.
 
 The action is a single `POST` to
 `/providers/Microsoft.Authorization/elevateAccess` on Azure Resource
-Manager.[^5] The request carries no body and no parameter other than
-`api-version`, so the caller cannot choose the principal, the role, or the
+Manager.[^5] The request carries no body and only the `api-version`
+parameter, so the caller cannot choose the principal, the role, or the
 scope: the platform fixes all three as the caller, User Access Administrator,
 and `/`. User Access Administrator reads every Azure resource type and
 manages role assignments and role definitions.[^6]
