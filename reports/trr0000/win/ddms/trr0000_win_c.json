@@ -1,0 +1,373 @@
+{
+  "style": {
+    "font-family": "sans-serif",
+    "background-color": "#ffffff",
+    "background-image": "",
+    "background-size": "100%",
+    "node-color": "#ffffff",
+    "border-width": 4,
+    "border-color": "#000000",
+    "radius": 50,
+    "node-padding": 5,
+    "node-margin": 2,
+    "outside-position": "auto",
+    "node-icon-image": "",
+    "node-background-image": "",
+    "icon-position": "inside",
+    "icon-size": 64,
+    "caption-position": "inside",
+    "caption-max-width": 200,
+    "caption-color": "#000000",
+    "caption-font-size": 16,
+    "caption-font-weight": "normal",
+    "label-position": "outside",
+    "label-display": "pill",
+    "label-color": "#000000",
+    "label-background-color": "#ffffff",
+    "label-border-color": "#000000",
+    "label-border-width": 2,
+    "label-font-size": 14,
+    "label-padding": 5,
+    "label-margin": 4,
+    "directionality": "directed",
+    "detail-position": "inline",
+    "detail-orientation": "parallel",
+    "arrow-width": 5,
+    "arrow-color": "#000000",
+    "margin-start": 5,
+    "margin-end": 5,
+    "margin-peer": 20,
+    "attachment-start": "normal",
+    "attachment-end": "normal",
+    "relationship-icon-image": "",
+    "type-color": "#000000",
+    "type-background-color": "#ffffff",
+    "type-border-color": "#000000",
+    "type-border-width": 0,
+    "type-font-size": 16,
+    "type-padding": 5,
+    "property-position": "outside",
+    "property-alignment": "colon",
+    "property-color": "#000000",
+    "property-font-size": 16,
+    "property-font-weight": "normal"
+  },
+  "nodes": [
+    {
+      "id": "n3",
+      "position": {
+        "x": 500,
+        "y": 100
+      },
+      "caption": "Read Credential Store File",
+      "labels": [
+        "Microsoft-Windows-Kernel-File ETW 15 (Read)",
+        "Win 4663 (An attempt was made to access an object)",
+        "Sysmon 11 (FileCreate)"
+      ],
+      "properties": {
+        "Target File (Chromium)": "Login Data, Login Data For Account",
+        "Target File (Firefox)": "logins.json, logins-backup.json"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n4",
+      "position": {
+        "x": 500,
+        "y": 340
+      },
+      "caption": "Read Wrapping-Key Material",
+      "labels": [
+        "Microsoft-Windows-Kernel-File ETW 15 (Read)",
+        "Win 4663 (An attempt was made to access an object)",
+        "Sysmon 11 (FileCreate)"
+      ],
+      "properties": {
+        "Target File": "Local State (Chromium), key4.db (Firefox)",
+        "Off-Host Artifact (DPAPI)": "%APPDATA%\\Microsoft\\Protect\\<SID>\\<GUID>"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n5",
+      "position": {
+        "x": -190.05536029278005,
+        "y": 380.8154684781446
+      },
+      "caption": "Set Registry Value",
+      "labels": [
+        "Sysmon 13 (RegistryValueSet)",
+        "Win 4657 (A registry value was modified)"
+      ],
+      "properties": {
+        "Hive": "HKCU | HKLM",
+        "Key (Chrome)": "SOFTWARE\\Policies\\Google\\Chrome",
+        "Key (Edge)": "SOFTWARE\\Policies\\Microsoft\\Edge",
+        "Value Name": "ApplicationBoundEncryptionEnabled",
+        "Value Data": "0",
+        "Permission": "Local administrator"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n6",
+      "position": {
+        "x": 950,
+        "y": 840
+      },
+      "caption": "Inject into Browser Process",
+      "labels": [
+        "Sysmon 1 (ProcessCreate)",
+        "Sysmon 10 (ProcessAccess)"
+      ],
+      "properties": {
+        "Target Process": "chrome.exe"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n7",
+      "position": {
+        "x": -190.05536029278005,
+        "y": 870.05536029278
+      },
+      "caption": "Unwrap Classic Chromium Key",
+      "labels": [
+        "Win 4695 (Unprotection of auditable protected data was attempted)",
+        "Microsoft-Windows-Crypto-DPAPI ETW 16385 (DPAPIDefInformationTaskMessage)"
+      ],
+      "properties": {
+        "API": "CryptUnprotectData",
+        "DLL": "crypt32.dll"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n8",
+      "position": {
+        "x": 500,
+        "y": 840
+      },
+      "caption": "Unwrap App-Bound Key",
+      "labels": [
+        "Sysmon 1 (ProcessCreate)",
+        "Win 4695 (Unprotection of auditable protected data was attempted)",
+        "Sysmon 10 (ProcessAccess)",
+        "Microsoft-Windows-Crypto-DPAPI ETW 16385 (DPAPIDefInformationTaskMessage)"
+      ],
+      "properties": {
+        "API": "IElevator::DecryptData, CryptUnprotectData",
+        "Service": "elevation_service.exe"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n9",
+      "position": {
+        "x": 1400,
+        "y": 840
+      },
+      "caption": "Unwrap Firefox NSS Key",
+      "labels": [
+        "Sysmon 7 (ImageLoaded)"
+      ],
+      "properties": {
+        "API": "PK11SDR_Decrypt",
+        "DLLs": "nss3.dll"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n10",
+      "position": {
+        "x": 500,
+        "y": 1140
+      },
+      "caption": "Decrypt Credential Rows",
+      "labels": [],
+      "properties": {
+        "API (Firefox)": "PK11SDR_Decrypt"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    },
+    {
+      "id": "n11",
+      "position": {
+        "x": 1400,
+        "y": 380.8154684781446
+      },
+      "caption": "Recover Firefox Primary Password",
+      "labels": [],
+      "properties": {
+        "Target Field": "key4.db metaData"
+      },
+      "style": {
+        "border-color": "#000000",
+        "caption-font-size": 16,
+        "label-position": "outside",
+        "label-font-size": 14,
+        "label-border-width": 2,
+        "property-font-size": 14
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r1",
+      "fromId": "n3",
+      "toId": "n4",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b"
+      }
+    },
+    {
+      "id": "r2",
+      "fromId": "n4",
+      "toId": "n7",
+      "type": "if Chromium v10 (classic DPAPI)",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r3",
+      "fromId": "n4",
+      "toId": "n8",
+      "type": "if Chromium v20 (ABE)",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r4",
+      "fromId": "n4",
+      "toId": "n9",
+      "type": "if Firefox NSS",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b"
+      }
+    },
+    {
+      "id": "r6",
+      "fromId": "n5",
+      "toId": "n7",
+      "type": "if ABE policy-disabled variant",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r8",
+      "fromId": "n6",
+      "toId": "n8",
+      "type": "if in-browser injection variant",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r9",
+      "fromId": "n7",
+      "toId": "n10",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r10",
+      "fromId": "n8",
+      "toId": "n10",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    },
+    {
+      "id": "r11",
+      "fromId": "n9",
+      "toId": "n10",
+      "type": "",
+      "properties": {},
+      "style": {
+        "arrow-color": "#f44e3b"
+      }
+    },
+    {
+      "id": "r12",
+      "fromId": "n11",
+      "toId": "n9",
+      "type": "if primary password set",
+      "properties": {},
+      "style": {
+        "arrow-color": "#000000"
+      }
+    }
+  ]
+}
