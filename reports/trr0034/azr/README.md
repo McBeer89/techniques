@@ -95,8 +95,9 @@ sequenceDiagram
     Client->>API: Call API with access token
 ```
 
-The authorization code is designed to be **short-lived** and is intended to be
-redeemed only by the client application that initiated the request.
+The authorization code is designed to be **short-lived**, with a lifetime of
+about one minute in Microsoft Entra ID,[^1] and is intended to be redeemed
+only by the client application that initiated the request.
 
 ### Authorization Endpoint
 
@@ -174,15 +175,24 @@ a `localhost` reply URL used by command-line or development-oriented clients.
 
 > [!NOTE]
 >
-> You can list applications in your tenant that have a `localhost` reply URL
-> registered with the following PowerShell script:
+> You can list the Microsoft first-party applications in your tenant that
+> have a `localhost` reply URL registered with the following PowerShell
+> script. Microsoft first-party service principals are owned by the
+> Microsoft Services tenant `f8cdef31-a31e-4b4a-93e4-5f571e91255a`:
 >
 > ```powershell
-> Connect-MgGraph -scope "Directory.Read.All"
+> Connect-MgGraph -Scopes "Application.Read.All"
+> $microsoft = "f8cdef31-a31e-4b4a-93e4-5f571e91255a"
 > Get-MgServicePrincipal -All | Where-Object {
+>     $_.AppOwnerOrganizationId -eq $microsoft -and
 >     $_.ReplyUrls -like "*localhost*"
-> }
+> } | Select-Object DisplayName, AppId, ReplyUrls
 > ```
+>
+> First-party applications with no service principal in your tenant do not
+> appear in the output. [EntraScopes] lists each Microsoft first-party
+> application with its client type and redirect URIs, independent of any
+> tenant.
 
 This validation is important for procedure scoping. A non-localhost reply URL
 would only support direct attacker collection if the first-party application has
@@ -219,8 +229,10 @@ applications developed and maintained by Microsoft.
 These applications are often represented in customer tenants by service
 principals that Microsoft provisions automatically or on first use. The service
 principal is the tenant-local object for the globally defined Microsoft
-application. Delegated permission grants for that service principal are stored
-as `OAuth2PermissionGrant` objects. When those grants already exist for the
+application. First-party applications do not always result in a service
+principal in the tenant, and they still appear in sign-in reports when they
+do not. Delegated permission grants for that service principal are stored as
+`OAuth2PermissionGrant` objects. When those grants already exist for the
 requested resource and scope, Entra ID does not show the user a new consent
 prompt because consent has already been granted in the tenant.
 
@@ -253,14 +265,18 @@ application useful when the attacker wants SharePoint or user profile access
 without registering a new application or triggering a new consent prompt.
 
 Other commonly discussed first-party applications include Microsoft Azure CLI,
-Microsoft Azure PowerShell, Visual Studio, Visual Studio Code, Microsoft Teams,
-and Aadrm Admin Powershell. These applications are attractive targets because
-they are Microsoft first-party applications with existing consent grants in many
-tenants, allowing authorization requests to avoid the suspicious consent prompt
-associated with newly registered third-party applications. The practical impact
-depends on which delegated scopes are already granted for the selected
-application and whether the application's registered reply URLs allow the
-authorization code to be exposed or captured.
+Microsoft Azure PowerShell, Visual Studio, Visual Studio Code, and Microsoft
+Teams. This list is not exhaustive. [EntraScopes] maintains
+a ConsentFix filter over Microsoft first-party applications (61 applications as
+of September 2026) with the affected reply URL for each one, both `localhost`
+and non-publicly resolvable domains such as `https://sqlaad/`. These
+applications are attractive targets because they are Microsoft first-party
+applications with existing consent grants in many tenants, allowing
+authorization requests to avoid the suspicious consent prompt associated with
+newly registered third-party applications. The practical impact depends on which
+delegated scopes are already granted for the selected application and whether
+the application's registered reply URLs allow the authorization code to be
+exposed or captured.
 
 For many ConsentFix examples, that useful reply URL is `localhost`. Local
 redirect URIs are common for public clients and developer tools because a
@@ -280,6 +296,29 @@ successful interactive authentication. Detection engineers should therefore
 inventory first-party service principals, review delegated permission grants,
 and examine which reply URLs and resources appear in sign-in activity for those
 applications.
+
+### Logging
+
+Entra ID records an authorization code flow as two user sign-in events. The
+user's authentication at the authorization endpoint is an interactive sign-in,
+in which the user provides an authentication factor. The client's redemption of
+the code at the token endpoint is a non-interactive sign-in, in which the client
+uses a token or code on the user's behalf.[^2][^3] The redirect that delivers
+the code to the reply URL is a browser request to the client, not to Entra ID.
+
+Both events record the user principal name, the application ID, the client IP
+address and its autonomous system number, the device details including the
+device ID, the network location details, and the session identifier.[^4] Entra
+ID generates the session identifier when the user authenticates interactively,
+and the access tokens issued from that root authentication inherit it.[^5] The
+non-interactive event's `IncomingTokenType` names the token type presented to
+Entra ID; its documented values are `none`, `primaryRefreshToken`, `saml11`,
+`saml20`, `remoteDesktopToken`, and `refreshToken`, and an authorization code
+falls into the `none` category.[^2] When the client that redeems the code runs
+on the machine where the user authenticated, as a loopback listener does, both
+events carry that machine's IP address. In Log Analytics the interactive event
+is in the `SigninLogs` table and the non-interactive event in
+`AADNonInteractiveUserSignInLogs`.
 
 ## Procedures
 
@@ -387,17 +426,14 @@ sign-in telemetry, such as events recorded in `NonInteractiveUserSignInLogs`.
 Following a suspicious authorization request, defenders may observe a token
 issuance or application sign-in event associated with the same application
 identifier present in the request. These events may originate from an unexpected
-IP address, device context, or location compared to the user’s normal
+IP address or location compared to the user’s normal
 authentication patterns, particularly if the authorization code is redeemed from
 a different environment than the one used during the initial authentication.
 
 The relevant data artifacts are the authorization request parameters, the
 interactive sign-in event created when the victim authenticates, and the
 non-interactive sign-in or token issuance event created when the code is
-redeemed. The attacker operations are the phishing delivery, authorization
-request construction, victim code collection, and token redemption. Keeping
-these artifacts separate from the attacker actions helps avoid treating log
-records as steps in the attack itself.
+redeemed.
 
 ## Available Emulation Tests
 
@@ -414,6 +450,16 @@ records as steps in the attack itself.
 - [Microsoft - Redirect URI Best Practices][microsoft-redirect-uri]
 - [Microsoft Graph - oAuth2PermissionGrant][microsoft-oauth2-grant]
 - [John Hammond - ConsentFix Video Walkthrough][hammond-video]
+- [EntraScopes - Entra ID first-party applications and scopes][EntraScopes]
+- [Microsoft - OAuth 2.0 authorization code flow][microsoft-auth-code-flow]
+- [Microsoft - Verify first-party Microsoft applications in sign-in
+  reports][microsoft-first-party-apps]
+- [Microsoft - Non-interactive user sign-ins][microsoft-noninteractive]
+- [Microsoft Graph - signIn resource type (beta)][microsoft-graph-signin]
+- [Microsoft - SigninLogs table reference][microsoft-signinlogs]
+- [Microsoft - AADNonInteractiveUserSignInLogs table
+  reference][microsoft-noninteractive-table]
+- [Microsoft - Linkable identifiers][microsoft-linkable-identifiers]
 
 [T1528]: https://attack.mitre.org/techniques/T1528/
 [push-consentfix]: https://pushsecurity.com/blog/consentfix
@@ -427,3 +473,24 @@ records as steps in the attack itself.
 [microsoft-oauth2-grant]:
   https://learn.microsoft.com/en-us/graph/api/resources/oauth2permissiongrant
 [hammond-video]: https://www.youtube.com/watch?v=AAiiIY-Soak
+[EntraScopes]: https://entrascopes.com/
+[microsoft-auth-code-flow]:
+  https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
+[microsoft-first-party-apps]:
+  https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/governance/verify-first-party-apps-sign-in
+[microsoft-noninteractive]:
+  https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins
+[microsoft-graph-signin]:
+  https://learn.microsoft.com/en-us/graph/api/resources/signin?view=graph-rest-beta
+[microsoft-signinlogs]:
+  https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs
+[microsoft-noninteractive-table]:
+  https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadnoninteractiveusersigninlogs
+[microsoft-linkable-identifiers]:
+  https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-authentication-track-linkable-identifiers
+
+[^1]: [OAuth 2.0 authorization code flow - Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)
+[^2]: [signIn resource type (beta) - Microsoft Graph](https://learn.microsoft.com/en-us/graph/api/resources/signin?view=graph-rest-beta)
+[^3]: [What are non-interactive user sign-ins in Microsoft Entra? - Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins)
+[^4]: [SigninLogs - Azure Monitor Logs reference](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs)
+[^5]: [Track and investigate identity activities with linkable identifiers in Microsoft Entra - Microsoft Learn](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-authentication-track-linkable-identifiers)
