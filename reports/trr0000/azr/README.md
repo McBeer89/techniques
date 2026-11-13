@@ -7,7 +7,7 @@
 | ID           | TRR0000                                                |
 | External IDs | [AZT203], [AZT601], [T1528]                            |
 | Tactics      | Credential Access                                      |
-| Platforms    | Identity Provider, Containers, IaaS, Office Suite, SaaS|
+| Platforms    | Azure                                                  |
 | Contributors | John McGuinness                                        |
 
 ### Scope Statement
@@ -82,8 +82,7 @@ that URI once the user authenticates and consents; a `/token` request with
 it. Confidential web apps authenticate the redemption with a `client_secret` or
 a `client_assertion` JWT signed with a registered certificate. The response
 carries an access token and, only if `offline_access` was requested, a refresh
-token. A code may be used to redeem an access token only once,[^7] and RFC 6749
-recommends a maximum code lifetime of 10 minutes.[^10]
+token. A code may be used to redeem an access token only once.[^7]
 
 ### Client Credentials and Federated Credential Exchange
 
@@ -101,46 +100,46 @@ flow. Permissions are granted directly to the application by an administrator,
 and no user is involved. AKS workload identity presents the kubelet-projected
 service-account JWT as the `client_assertion`.[^4] The federated identity
 credential's `issuer`, `subject`, and `audience` values must case-sensitively
-match the corresponding claims in the token;[^11] when the checks pass, the
+match the corresponding claims in the token;[^10] when the checks pass, the
 platform issues an access token to the external workload.
 
 ### The Instance Metadata Service
 
 The Instance Metadata Service (IMDS) is a REST API at the non-routable address
 `169.254.169.254`, accessible only from within a running virtual machine
-instance,[^12] and its managed identity token endpoint is
-`http://169.254.169.254/metadata/identity/oauth2/token`.[^13] The security
+instance,[^11] and its managed identity token endpoint is
+`http://169.254.169.254/metadata/identity/oauth2/token`.[^12] The security
 boundary of a managed identity is the resource where it is used: all code and
 scripts running on a virtual machine can request and retrieve tokens for any
-managed identity available on it.[^13] A request must carry the header
+managed identity available on it.[^12] A request must carry the header
 `Metadata: true`, a mitigation against server-side request forgery, and names
 the target resource's App ID URI in the `resource` query parameter, which also
 appears in the issued token's `aud` claim. The token is based on the managed
-identity's service principal[^13] and represents the application that accesses
-the resource, not any specific user.[^14] The managed identities subsystem
+identity's service principal[^12] and represents the application that accesses
+the resource, not any specific user.[^13] The managed identities subsystem
 caches tokens, so a call to Entra ID results only when no token is in the cache
 or the cached token is expired.
 
 App Service, Azure Functions, and Container Apps expose an internally accessible
 token endpoint whose URL is in `IDENTITY_ENDPOINT`. The caller sends the
 platform-rotated `IDENTITY_HEADER` value as the `X-IDENTITY-HEADER` header on an
-HTTP GET to that URL.[^14][^15][^16] Azure Automation's runbook samples send the
-same header to the URL in `IDENTITY_ENDPOINT`.[^17] Service Fabric exposes an
-HTTPS `localhost` token service that takes a `Secret` header.[^18] The Container
+HTTP GET to that URL.[^13][^14][^15] Azure Automation's runbook samples send the
+same header to the URL in `IDENTITY_ENDPOINT`.[^16] Service Fabric exposes an
+HTTPS `localhost` token service that takes a `Secret` header.[^17] The Container
 Instances sample token request goes to the IMDS address with the `Metadata`
 header, or, for Windows container instances, to `IDENTITY_ENDPOINT` with
-`IDENTITY_HEADER`.[^19] In an AKS cluster the IMDS endpoint is reachable from
+`IDENTITY_HEADER`.[^18] In an AKS cluster the IMDS endpoint is reachable from
 all pods by default; when IMDS restriction is enabled, pods that are not on the
-host network cannot acquire managed identity tokens from it.[^20]
+host network cannot acquire managed identity tokens from it.[^19]
 
 ### Access Tokens
 
-An Entra ID access token is a signed JSON web token[^21] whose claims are
-defined in the claims reference,[^22] and a standard OAuth2 token contains no
-certificate binding information.[^23] An access token receives a random default
+An Entra ID access token is a signed JSON web token[^20] whose claims are
+defined in the claims reference,[^21] and a standard OAuth2 token contains no
+certificate binding information.[^22] An access token receives a random default
 lifetime between 60 and 90 minutes, or up to 28 hours when both the client and
-the resource support Continuous Access Evaluation.[^24][^25] A refresh token's
-Max Inactive Time is 90 days and its Max Age is until-revoked;[^24] one sent to
+the resource support Continuous Access Evaluation.[^23][^24] A refresh token's
+Max Inactive Time is 90 days and its Max Age is until-revoked;[^23] one sent to
 a redirect URI registered as `spa` expires after 24 hours.[^9] The user has 15
 minutes from the device authorization request to sign in, the default
 `expires_in` of a device code.[^2]
@@ -148,100 +147,100 @@ minutes from the device authorization request to sign in, the default
 ### Conditional Access and Device Code Flow
 
 The Conditional Access authentication flows condition explicitly targets device
-code flow.[^26] Protocol tracking state is sustained through subsequent
+code flow.[^25] Protocol tracking state is sustained through subsequent
 refreshes, so a session that began with device code flow can remain subject to
 authentication flows policies on later redemptions. Starting July 1, 2026, all
 new Microsoft Entra tenants block device code flow as part of security
-defaults.[^27] The require-managed-device grant control and device state
+defaults.[^26] The require-managed-device grant control and device state
 conditions are not supported with device code flow, because the device
 performing authentication cannot provide its device state to the device that is
-providing a code.[^28]
+providing a code.[^27]
 
 ### OAuth Consent Framework
 
 Delegated permissions let an application act on a user's behalf and appear in
 the `scp` claim; application permissions, also known as app roles, are used in
 the app-only scenario without a signed-in user and are carried in the `roles`
-claim.[^29][^30] Users can consent to delegated permissions for their own data
-and administrators for all users;[^29] app-only permissions always require a
-tenant administrator's consent.[^31] For Microsoft Graph the result of consent
+claim.[^28][^29] Users can consent to delegated permissions for their own data
+and administrators for all users;[^28] app-only permissions always require a
+tenant administrator's consent.[^30] For Microsoft Graph the result of consent
 is an `OAuth2PermissionGrant` for delegated permissions or an
-`appRoleAssignment` for application permissions,[^29] and an
+`appRoleAssignment` for application permissions,[^28] and an
 `OAuth2PermissionGrant` carries `consentType` `Principal` (one user) or
-`AllPrincipals` (all users, grantable by an administrator).[^32] Application
-permissions can be granted through a consent experience.[^33]
+`AllPrincipals` (all users, grantable by an administrator).[^31] Application
+permissions can be granted through a consent experience.[^32]
 
 Tenant user-consent settings offer three options: no user consent; consent only
 to applications from verified publishers or the organization, and only for
 permissions the administrator selects; or consent to any application for any
-permission that does not require admin consent.[^34] Risk-based step-up consent
+permission that does not require admin consent.[^33] Risk-based step-up consent
 is enabled by default and changes behavior only when user consent is enabled;
 with it, users cannot consent to most newly registered multitenant apps that are
-not publisher verified.[^35][^36] The Microsoft managed consent policy, the
+not publisher verified.[^34][^35] The Microsoft managed consent policy, the
 default for a new tenant, lets end users consent to any user-consentable
 delegated permission except a Microsoft-maintained list of Microsoft Graph and
-Exchange Online scopes.[^37]
+Exchange Online scopes.[^36]
 
 Granting tenant-wide admin consent requires signing in as a user authorized to
-consent on behalf of the organization.[^38] Privileged Role Administrator
+consent on behalf of the organization.[^37] Privileged Role Administrator
 qualifies for any permission on any API; Cloud Application Administrator, AI
 Administrator, and Application Administrator qualify for any permission except
 Microsoft Graph app roles; a custom directory role that includes the permission
-to grant permissions to applications also qualifies.[^38][^39] The admin consent
+to grant permissions to applications also qualifies.[^37][^38] The admin consent
 endpoint `https://login.microsoftonline.com/{tenant}/v2.0/adminconsent` requires
 a tenant administrator to sign in to complete the request, application
 permissions are requested through the `/.default` scope value, and the
 documented success redirect carries `admin_consent=True`, `tenant`, `scope`, and
-`state`.[^40]
+`state`.[^39]
 
 ### Telemetry Surfaces
 
 Entra ID sign-in logs have four types: interactive user, non-interactive user,
-service principal, and managed identity sign-ins.[^41] In an interactive sign-in
-the user provides an authentication factor to Entra ID.[^42] A non-interactive
+service principal, and managed identity sign-ins.[^40] In an interactive sign-in
+the user provides an authentication factor to Entra ID.[^41] A non-interactive
 sign-in is done on behalf of a user by a client app or OS component without the
 user providing a factor. Examples are a client app using a refresh token to get
 an access token and a client using an authorization code to get an access token
-and refresh token.[^43] A service principal sign-in involves no user: the app
+and refresh token.[^42] A service principal sign-in involves no user: the app
 provides its own credential, such as a certificate or app secret, as an
-application using a client secret in the client credentials flow does.[^44]
+application using a client secret in the client credentials flow does.[^43]
 Managed identity sign-ins are performed by resources whose secrets Azure
-manages.[^45] In a Log Analytics workspace the four types are the `SigninLogs`,
+manages.[^44] In a Log Analytics workspace the four types are the `SigninLogs`,
 `AADNonInteractiveUserSignInLogs`, `AADServicePrincipalSignInLogs`, and
-`AADManagedIdentitySignInLogs` tables.[^46][^47][^48][^49][^50]
+`AADManagedIdentitySignInLogs` tables.[^45][^46][^47][^48][^49]
 
 `AuthenticationProtocol` lists the protocol type or grant type used in the
-authentication, and `deviceCode` is among its values.[^46]
+authentication, and `deviceCode` is among its values.[^45]
 `OriginalTransferMethod` carries the transfer method used to initiate a session
-throughout all subsequent requests;[^46] the Graph `originalTransferMethod`
-value for a session begun with device code flow is `deviceCodeFlow`.[^51] For
+throughout all subsequent requests;[^45] the Graph `originalTransferMethod`
+value for a session begun with device code flow is `deviceCodeFlow`.[^50] For
 non-interactive sign-ins performed by confidential clients, the logged
 `IPAddress` is the original IP used for the original token issuance, not the
-source of the refresh request.[^43]
+source of the refresh request.[^42]
 
 `AuditLogs` is the Microsoft Entra audit log, which captures changes to
 applications, groups, users, and licenses, with the activity in
-`ActivityDisplayName`.[^52][^47] The Core Directory activity reference lists,
+`ActivityDisplayName`.[^51][^46] The Core Directory activity reference lists,
 under category `ApplicationManagement`, the activities `Add app role assignment
 to service principal`, `Add delegated permission grant`, `Add service
-principal`, and `Consent to application`.[^53] `Consent to application`
+principal`, and `Consent to application`.[^52] `Consent to application`
 corresponds to a user granting consent, `Add delegated permission grant` to
 granting delegated access, and `Add app role assignment to service principal` to
-granting app-only access.[^54]
+granting app-only access.[^53]
 
 On the host, an outbound connection from the resource is observable as a Linux
 auditd `SYSCALL` record, which a syscall rule naming `connect` starts when a
-program makes that call.[^55][^56] It is also observable as Sysmon event ID 3
+program makes that call.[^54][^55] It is also observable as Sysmon event ID 3
 (NetworkConnect), which logs TCP and UDP connections linked to a process, is
 disabled by default, and is defined in the shared event manifest for Windows and
-Linux.[^57][^58] A file read in a pod is observable as an auditd record under a
-watch rule (`-w path`) or a syscall rule with `-F path`.[^55] An audit event
-contains a `PATH` record for every path passed to the system call,[^56] and
-since glibc 2.26 the `open()` wrapper issues the `openat()` system call.[^59]
+Linux.[^56][^57] A file read in a pod is observable as an auditd record under a
+watch rule (`-w path`) or a syscall rule with `-F path`.[^54] An audit event
+contains a `PATH` record for every path passed to the system call,[^55] and
+since glibc 2.26 the `open()` wrapper issues the `openat()` system call.[^58]
 `AKSAudit` contains all Kubernetes API server audit logs, requires diagnostic
-settings, and carries the request's `Verb` and `ObjectRef`.[^60][^61][^62] In
+settings, and carries the request's `Verb` and `ObjectRef`.[^59][^60][^61] In
 the Kubernetes authorization model an HTTP `POST` maps to the `create`
-verb.[^63]
+verb.[^62]
 
 ## Procedures
 
@@ -259,17 +258,17 @@ the adversary's possession, with the victim granting access from another device;
 the request and response shapes are stated in [Device Authorization Grant
 Internals]. The adversary generates a legitimate device code request at
 `/oauth2/v2.0/devicecode` and tricks the target into entering the `user_code` at
-a legitimate Microsoft sign-in page.[^64] The victim's authentication at the
-verification page authenticates the adversary's session,[^65] and the
+a legitimate Microsoft sign-in page.[^63] The victim's authentication at the
+verification page authenticates the adversary's session,[^64] and the
 adversary's client, polling `/oauth2/v2.0/token` with the device-code grant
-type, receives the resulting access and refresh tokens[^64] through a back
+type, receives the resulting access and refresh tokens[^63] through a back
 channel.[^7]
 
 The victim's device-code authentication is an `Entra SigninLogs (Interactive
 sign-in)` row with `AuthenticationProtocol` = `deviceCode`. That placement
 follows from the interactive sign-in definition and the `deviceCode` value in
 [Telemetry Surfaces], and from device code flow events in the sign-in logs being
-tied to the authentication protocol property.[^26] In this TRR's lab, the
+tied to the authentication protocol property.[^25] In this TRR's lab, the
 polling client and the victim's browser ran on one hybrid-joined compliant host
 in a corporate tenant. There the redemption wrote an `Entra
 AADNonInteractiveUserSignInLogs (Device code redemption)` row about five seconds
@@ -294,26 +293,25 @@ application's service principal. The consent settings, roles, and endpoint are
 stated in [OAuth Consent Framework], and the request shapes in [Authorization
 Code Flow Internals] and [Client Credentials and Federated Credential Exchange].
 
-The prerequisite, drawn gray, is an application registered with the sign-in
-audience `AzureADMultipleOrgs`, which admits work or school accounts from any
-organization's tenant.[^66] An application object is the global representation
+The prerequisite is an application registered with the sign-in audience
+`AzureADMultipleOrgs`, which admits work or school accounts from any
+organization's tenant.[^65] An application object is the global representation
 for use across all tenants and its service principal is the local representation
 in a specific tenant, with changes to the object reflected only in the home
-tenant.[^67] The victim tenant therefore receives its first object for the
-application at consent. The registration is drawn gray because it happens in the
+tenant.[^66] The registration is drawn gray because it happens in the
 application's home tenant, not the victim tenant.
 
 On the delegated branch the victim authenticates at `/oauth2/v2.0/authorize`.
 When a user from a different tenant signs in to the application for the first
-time, Entra ID asks the user to consent to the requested permissions.[^31] If
+time, Entra ID asks the user to consent to the requested permissions.[^30] If
 the user consents, a service principal for the application is created in the
 user's tenant and a delegation recording the consent is created in the
-directory.[^31] The platform then returns the authorization code to the
+directory.[^30] The platform then returns the authorization code to the
 registered `redirect_uri`, and the adversary redeems it at `/oauth2/v2.0/token`
 with the application's own credential. Whether the victim may consent at all
 depends on the tenant settings stated in [OAuth Consent Framework]. The consent
 prompt appears when no previous record of user or admin consent for the required
-permissions exists.[^34] It follows that a run against a grant created earlier
+permissions exists.[^33] It follows that a run against a grant created earlier
 can pass through the sign-in and the code redemption with that earlier consent
 as its prerequisite. Whether the consent audit rows are written again on such a
 run is not documented.
@@ -333,9 +331,8 @@ principal in the victim tenant. On the application branch the admin consent run
 carries the label `Entra AuditLogs (Add app role assignment to service
 principal)`, the app-only access activity in [Telemetry Surfaces]. That
 placement follows from application permissions being grantable through a consent
-experience, as stated in [OAuth Consent Framework]; no Microsoft page shows the
-row for an admin consent run. The code redemption is an `Entra
-AADNonInteractiveUserSignInLogs (Authorization code redemption)` row, the
+experience, as stated in [OAuth Consent Framework]. The code redemption is an
+`Entra AADNonInteractiveUserSignInLogs (Authorization code redemption)` row, the
 non-interactive sign-in example in [Telemetry Surfaces]. The client-credentials
 issuance is an `Entra AADServicePrincipalSignInLogs (Client credentials flow
 sign-in)` row carrying `ClientCredentialType`, `ServicePrincipalId`, and
@@ -350,11 +347,7 @@ its path.
 This procedure covers a token request from code the adversary runs on an Azure
 compute resource with an attached managed identity, against the managed identity
 token endpoint; the endpoint, header, and caching facts are stated in [The
-Instance Metadata Service]. The token represents the application and not any
-specific user, and none of the documented token requests in [The Instance
-Metadata Service] shows an authorization-endpoint step; that no user
-authentication or consent step precedes the request follows from those
-statements.
+Instance Metadata Service].
 
 The prerequisite, drawn gray, is code execution on the resource with a
 system-assigned or user-assigned identity: an Azure VM, App Service, Function
@@ -366,11 +359,11 @@ request to the managed identity token endpoint, using the endpoint and header of
 that host, and receives a bearer access token. On AKS, a pod without the
 `azure.workload.identity/use` label is not mutated by the workload identity
 admission webhook.[^4] A credential chain that falls through to managed
-identity[^68] then calls the node's IMDS and obtains a token for an identity
+identity[^67] then calls the node's IMDS and obtains a token for an identity
 attached to the node. That path follows from those statements and the AKS IMDS
 default in [The Instance Metadata Service], and it runs through this procedure
 rather than Procedure D. The kubelet identity's default permissions are
-None.[^69]
+None.[^68]
 
 The request is observable as `Linux auditd (connect syscall)` and `Sysmon 3
 (NetworkConnect)` records for the connection to the token endpoint address. The
@@ -402,30 +395,30 @@ annotation naming the Entra application.[^4] The adversary reads the projected
 token from the file named by `AZURE_FEDERATED_TOKEN_FILE`,
 `/var/run/secrets/azure/tokens/azure-identity-token` in the documented example,
 a mount path that is an implementation detail of the webhook and can change.[^4]
-The token is a signed JWT[^70] that Kubernetes refreshes in place before it
+The token is a signed JWT[^69] that Kubernetes refreshes in place before it
 expires.[^4] The read is observable as `Linux auditd (open/openat syscall)`
 under a rule keyed on the path. `/proc/<pid>/environ` holds the initial
-environment set at `execve`.[^71] That a read of it yields the token file path
+environment set at `execve`.[^70] That a read of it yields the token file path
 and not the token follows from that content and from
 `AZURE_FEDERATED_TOKEN_FILE` holding a path. `/proc/<pid>/mem` gives access to a
-process's memory pages under a ptrace access-mode check.[^72] The `environ` and
+process's memory pages under a ptrace access-mode check.[^71] The `environ` and
 `mem` reads open a procfs path rather than the token path; it follows that a
 path-keyed audit rule covers the token-file read and not the memory read.
 
 On the TokenRequest branch the adversary mints the assertion instead of reading
 it. The operation requires `create` on `serviceaccounts/token`, the right that
 lets users create TokenRequests to issue tokens for existing service
-accounts,[^73] carried as the operation's `Permission`. The TokenRequest
+accounts,[^72] carried as the operation's `Permission`. The TokenRequest
 subresource of a ServiceAccount, a `POST` to
 `/api/v1/namespaces/{namespace}/serviceaccounts/{name}/token`, issues a
 time-bound token for that service account with the audiences the caller
-requests.[^74][^75] Direct Entra workload identity federation requires a token
+requests.[^73][^74] Direct Entra workload identity federation requires a token
 with the audience `api://AzureADTokenExchange`; when identity bindings are
 enabled the identity binding webhook sets the default projected token's audience
 to `api://AKSIdentityBinding` instead.[^4] The federated identity credential for
 a service account names the subject `system:serviceaccount:<namespace>:<name>`
 and lists the audiences that may appear in the token, with
-`api://AzureADTokenExchange` as the recommended value.[^76] The credential
+`api://AzureADTokenExchange` as the recommended value.[^75] The credential
 matches on the issuer, subject, and audience named in [Client Credentials and
 Federated Credential Exchange], and a TokenRequest for the same service account
 carries that subject and the requested audience. That Entra ID accepts a minted
@@ -434,7 +427,7 @@ token. The request is observable as an `AKSAudit (Kubernetes API server audit)`
 row. That the row carries `Verb` `create` and `ObjectRef` resource
 `serviceaccounts`, subresource `token` follows from the POST-to-create mapping
 and the audit event fields in [Telemetry Surfaces]. The kubelet obtains
-projected service account tokens through the TokenRequest API,[^74] so its own
+projected service account tokens through the TokenRequest API,[^73] so its own
 requests would carry the same verb and object reference.
 
 Either assertion is presented at `/oauth2/v2.0/token` for the federated
@@ -443,16 +436,13 @@ application registration is an `Entra AADServicePrincipalSignInLogs (Federated
 credential exchange)` row identified by `ClientCredentialType` and
 `FederatedCredentialId`. `AADManagedIdentitySignInLogs` also carries
 `FederatedCredentialId`, and the documented AKS setup federates a user-assigned
-managed identity,[^77] so which table records an exchange whose credential is on
+managed identity,[^76] so which table records an exchange whose credential is on
 a user-assigned managed identity is not stated. The
 `AADServicePrincipalSignInLogs` `IPAddress` column is the address of the client
-used to sign in.[^49] By default AKS egresses through an AKS-assigned Standard
+used to sign in.[^48] By default AKS egresses through an AKS-assigned Standard
 Load Balancer public IP, and the NAT gateway outbound types egress through Azure
-NAT Gateway.[^78] That the row records the cluster's egress address rather than
-the pod's follows from the column definition and the egress configuration. The
-credential's `subject` must match the token's `sub` claim,[^79] and it follows
-that a federated identity credential whose subject names a different namespace
-or service account authorizes that account's pods instead.
+NAT Gateway.[^77] That the row records the cluster's egress address rather than
+the pod's follows from the column definition and the egress configuration.
 
 ![TRR0000.AZR.D DDM](ddms/trr0000_azr_d.png)
 
@@ -555,73 +545,71 @@ or service account authorizes that account's pods instead.
 [^7]: [MSAL Authentication Flows](https://learn.microsoft.com/entra/identity-platform/msal-authentication-flows)
 [^8]: [Microsoft Identity Platform Breaking Changes Reference](https://learn.microsoft.com/entra/identity-platform/reference-breaking-changes)
 [^9]: [Microsoft Identity Platform OAuth 2.0 Authorization Code Flow](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow)
-[^10]: [RFC 6749 OAuth 2.0 Authorization Framework](https://datatracker.ietf.org/doc/html/rfc6749)
-[^11]: [Microsoft Identity Platform Workload Identity Federation](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation)
-[^12]: [Azure Instance Metadata Service](https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service)
-[^13]: [Use Managed Identities on an Azure VM to Acquire Access Tokens](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-use-vm-token)
-[^14]: [App Service Managed Identity Overview](https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity)
-[^15]: [App Service Environment Variables and App Settings Reference](https://learn.microsoft.com/en-us/azure/app-service/reference-app-settings)
-[^16]: [Azure Container Apps Managed Identities](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity)
-[^17]: [Enable Managed Identity for Azure Automation](https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation)
-[^18]: [Service Fabric Managed Identity in Application Code](https://learn.microsoft.com/en-us/azure/service-fabric/how-to-managed-identity-service-fabric-app-code)
-[^19]: [Azure Container Instances Managed Identity](https://learn.microsoft.com/en-us/azure/container-instances/container-instances-managed-identity)
-[^20]: [AKS IMDS Restriction](https://learn.microsoft.com/en-us/azure/aks/imds-restriction)
-[^21]: [Microsoft Identity Platform Access Tokens](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
-[^22]: [Microsoft Identity Platform Access Token Claims Reference](https://learn.microsoft.com/en-us/entra/identity-platform/access-token-claims-reference)
-[^23]: [Microsoft Identity Web Token Binding](https://learn.microsoft.com/entra/msidweb/call-downstream-apis/token-binding)
-[^24]: [Microsoft Identity Platform Configurable Token Lifetimes](https://learn.microsoft.com/en-us/entra/identity-platform/configurable-token-lifetimes)
-[^25]: [Microsoft Entra Continuous Access Evaluation](https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-continuous-access-evaluation)
-[^26]: [Microsoft Entra Conditional Access Authentication Flows](https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-authentication-flows)
-[^27]: [Microsoft Entra Security Defaults](https://learn.microsoft.com/entra/fundamentals/security-defaults)
-[^28]: [Microsoft Entra Conditional Access Grant Controls](https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-grant)
-[^29]: [Microsoft Identity Platform Permissions and Consent Overview](https://learn.microsoft.com/entra/identity-platform/permissions-consent-overview)
-[^30]: [Microsoft Entra Application and Delegated Permission Access Tokens](https://learn.microsoft.com/troubleshoot/entra/entra-id/app-integration/application-delegated-permission-access-tokens-identity-platform)
-[^31]: [Microsoft Identity Platform Convert App to Multitenant](https://learn.microsoft.com/entra/identity-platform/howto-convert-app-to-be-multi-tenant)
-[^32]: [Microsoft Graph oAuth2PermissionGrant Resource](https://learn.microsoft.com/graph/api/resources/oauth2permissiongrant?view=graph-rest-1.0)
-[^33]: [Microsoft Graph Service Principal App Role Assignment](https://learn.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignedto?view=graph-rest-1.0)
-[^34]: [Microsoft Entra User and Admin Consent Overview](https://learn.microsoft.com/entra/identity/enterprise-apps/user-admin-consent-overview)
-[^35]: [Microsoft Identity Platform Publisher Verification Overview](https://learn.microsoft.com/entra/identity-platform/publisher-verification-overview)
-[^36]: [Microsoft Entra Risk-Based Step-Up Consent](https://learn.microsoft.com/entra/identity/enterprise-apps/configure-risk-based-step-up-consent)
-[^37]: [Microsoft Entra Manage App Consent Policies](https://learn.microsoft.com/entra/identity/enterprise-apps/manage-app-consent-policies)
-[^38]: [Microsoft Entra Grant Tenant-Wide Admin Consent](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent)
-[^39]: [Microsoft Entra Built-In Roles Reference](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference)
-[^40]: [Microsoft Identity Platform Admin Consent Endpoint](https://learn.microsoft.com/en-us/entra/identity-platform/v2-admin-consent)
-[^41]: [Microsoft Entra Sign-In Logs Overview](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins)
-[^42]: [Microsoft Entra Interactive User Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-interactive-sign-ins)
-[^43]: [Microsoft Entra Non-Interactive User Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins)
-[^44]: [Microsoft Entra Service Principal Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-service-principal-sign-ins)
-[^45]: [Microsoft Entra Managed Identity Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-managed-identity-sign-ins)
-[^46]: [Azure Monitor SigninLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs)
-[^47]: [Microsoft Entra Diagnostic Settings Log Options](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-diagnostic-settings-logs-options)
-[^48]: [Azure Monitor AADNonInteractiveUserSignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadnoninteractiveusersigninlogs)
-[^49]: [Azure Monitor AADServicePrincipalSignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadserviceprincipalsigninlogs)
-[^50]: [Azure Monitor AADManagedIdentitySignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadmanagedidentitysigninlogs)
-[^51]: [Microsoft Graph signIn Resource](https://learn.microsoft.com/en-us/graph/api/resources/signin?view=graph-rest-beta)
-[^52]: [Azure Monitor AuditLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/auditlogs)
-[^53]: [Microsoft Entra Audit Activity Reference](https://learn.microsoft.com/entra/identity/monitoring-health/reference-audit-activities)
-[^54]: [Microsoft Entra Audit Logs for App Permissions](https://learn.microsoft.com/entra/identity/enterprise-apps/app-perms-audit-logs)
-[^55]: [Linux auditctl Manual Page](https://man7.org/linux/man-pages/man8/auditctl.8.html)
-[^56]: [Red Hat Auditing the System](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/security_hardening/auditing-the-system_security-hardening)
-[^57]: [Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
-[^58]: [Sysmon Common Event Manifest](https://raw.githubusercontent.com/microsoft/SysmonCommon/main/manifest.xml)
-[^59]: [Linux open Manual Page](https://man7.org/linux/man-pages/man2/open.2.html)
-[^60]: [Azure Monitor AKSAudit Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aksaudit)
-[^61]: [Kubernetes Auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
-[^62]: [Kubernetes Audit API Reference](https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/)
-[^63]: [Kubernetes Authorization Overview](https://kubernetes.io/docs/reference/access-authn-authz/authorization/)
-[^64]: [Microsoft Security Blog - Storm-2372 Device Code Phishing](https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/)
-[^65]: [Microsoft Security Blog - CaptiveCrunch](https://www.microsoft.com/en-us/security/blog/2026/07/31/captivecrunch-midnight-blizzard-targets-travelers-worldwide-for-malware-delivery-and-credential-theft/)
-[^66]: [Microsoft Identity Platform App Manifest Reference](https://learn.microsoft.com/entra/identity-platform/reference-microsoft-graph-app-manifest)
-[^67]: [Microsoft Identity Platform Application and Service Principal Objects](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
-[^68]: [Azure SDK Credential Chains](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication/credential-chains)
-[^69]: [AKS Managed Identity Overview](https://learn.microsoft.com/en-us/azure/aks/managed-identity-overview)
-[^70]: [Kubernetes Authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
-[^71]: [Linux proc_pid_environ Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html)
-[^72]: [Linux proc_pid_mem Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_mem.5.html)
-[^73]: [Kubernetes RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
-[^74]: [Kubernetes Service Account Administration](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/)
-[^75]: [Kubernetes TokenRequest API Reference](https://raw.githubusercontent.com/kubernetes/website/release-1.34/content/en/docs/reference/kubernetes-api/authentication-resources/token-request-v1.md)
-[^76]: [Microsoft Entra Workload Identity Federation Create Trust](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust)
-[^77]: [Deploy Microsoft Entra Workload ID on AKS](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)
-[^78]: [Customize Cluster Egress with Outbound Types in AKS](https://learn.microsoft.com/en-us/azure/aks/egress-outboundtype)
-[^79]: [Microsoft Entra Workload Identity Federation Considerations](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-considerations)
+[^10]: [Microsoft Identity Platform Workload Identity Federation](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation)
+[^11]: [Azure Instance Metadata Service](https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service)
+[^12]: [Use Managed Identities on an Azure VM to Acquire Access Tokens](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-use-vm-token)
+[^13]: [App Service Managed Identity Overview](https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity)
+[^14]: [App Service Environment Variables and App Settings Reference](https://learn.microsoft.com/en-us/azure/app-service/reference-app-settings)
+[^15]: [Azure Container Apps Managed Identities](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity)
+[^16]: [Enable Managed Identity for Azure Automation](https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation)
+[^17]: [Service Fabric Managed Identity in Application Code](https://learn.microsoft.com/en-us/azure/service-fabric/how-to-managed-identity-service-fabric-app-code)
+[^18]: [Azure Container Instances Managed Identity](https://learn.microsoft.com/en-us/azure/container-instances/container-instances-managed-identity)
+[^19]: [AKS IMDS Restriction](https://learn.microsoft.com/en-us/azure/aks/imds-restriction)
+[^20]: [Microsoft Identity Platform Access Tokens](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
+[^21]: [Microsoft Identity Platform Access Token Claims Reference](https://learn.microsoft.com/en-us/entra/identity-platform/access-token-claims-reference)
+[^22]: [Microsoft Identity Web Token Binding](https://learn.microsoft.com/entra/msidweb/call-downstream-apis/token-binding)
+[^23]: [Microsoft Identity Platform Configurable Token Lifetimes](https://learn.microsoft.com/en-us/entra/identity-platform/configurable-token-lifetimes)
+[^24]: [Microsoft Entra Continuous Access Evaluation](https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-continuous-access-evaluation)
+[^25]: [Microsoft Entra Conditional Access Authentication Flows](https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-authentication-flows)
+[^26]: [Microsoft Entra Security Defaults](https://learn.microsoft.com/entra/fundamentals/security-defaults)
+[^27]: [Microsoft Entra Conditional Access Grant Controls](https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-grant)
+[^28]: [Microsoft Identity Platform Permissions and Consent Overview](https://learn.microsoft.com/entra/identity-platform/permissions-consent-overview)
+[^29]: [Microsoft Entra Application and Delegated Permission Access Tokens](https://learn.microsoft.com/troubleshoot/entra/entra-id/app-integration/application-delegated-permission-access-tokens-identity-platform)
+[^30]: [Microsoft Identity Platform Convert App to Multitenant](https://learn.microsoft.com/entra/identity-platform/howto-convert-app-to-be-multi-tenant)
+[^31]: [Microsoft Graph oAuth2PermissionGrant Resource](https://learn.microsoft.com/graph/api/resources/oauth2permissiongrant?view=graph-rest-1.0)
+[^32]: [Microsoft Graph Service Principal App Role Assignment](https://learn.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignedto?view=graph-rest-1.0)
+[^33]: [Microsoft Entra User and Admin Consent Overview](https://learn.microsoft.com/entra/identity/enterprise-apps/user-admin-consent-overview)
+[^34]: [Microsoft Identity Platform Publisher Verification Overview](https://learn.microsoft.com/entra/identity-platform/publisher-verification-overview)
+[^35]: [Microsoft Entra Risk-Based Step-Up Consent](https://learn.microsoft.com/entra/identity/enterprise-apps/configure-risk-based-step-up-consent)
+[^36]: [Microsoft Entra Manage App Consent Policies](https://learn.microsoft.com/entra/identity/enterprise-apps/manage-app-consent-policies)
+[^37]: [Microsoft Entra Grant Tenant-Wide Admin Consent](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent)
+[^38]: [Microsoft Entra Built-In Roles Reference](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference)
+[^39]: [Microsoft Identity Platform Admin Consent Endpoint](https://learn.microsoft.com/en-us/entra/identity-platform/v2-admin-consent)
+[^40]: [Microsoft Entra Sign-In Logs Overview](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins)
+[^41]: [Microsoft Entra Interactive User Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-interactive-sign-ins)
+[^42]: [Microsoft Entra Non-Interactive User Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-noninteractive-sign-ins)
+[^43]: [Microsoft Entra Service Principal Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-service-principal-sign-ins)
+[^44]: [Microsoft Entra Managed Identity Sign-Ins](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-managed-identity-sign-ins)
+[^45]: [Azure Monitor SigninLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/signinlogs)
+[^46]: [Microsoft Entra Diagnostic Settings Log Options](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-diagnostic-settings-logs-options)
+[^47]: [Azure Monitor AADNonInteractiveUserSignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadnoninteractiveusersigninlogs)
+[^48]: [Azure Monitor AADServicePrincipalSignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadserviceprincipalsigninlogs)
+[^49]: [Azure Monitor AADManagedIdentitySignInLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aadmanagedidentitysigninlogs)
+[^50]: [Microsoft Graph signIn Resource](https://learn.microsoft.com/en-us/graph/api/resources/signin?view=graph-rest-beta)
+[^51]: [Azure Monitor AuditLogs Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/auditlogs)
+[^52]: [Microsoft Entra Audit Activity Reference](https://learn.microsoft.com/entra/identity/monitoring-health/reference-audit-activities)
+[^53]: [Microsoft Entra Audit Logs for App Permissions](https://learn.microsoft.com/entra/identity/enterprise-apps/app-perms-audit-logs)
+[^54]: [Linux auditctl Manual Page](https://man7.org/linux/man-pages/man8/auditctl.8.html)
+[^55]: [Red Hat Auditing the System](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/security_hardening/auditing-the-system_security-hardening)
+[^56]: [Sysmon](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+[^57]: [Sysmon Common Event Manifest](https://raw.githubusercontent.com/microsoft/SysmonCommon/main/manifest.xml)
+[^58]: [Linux open Manual Page](https://man7.org/linux/man-pages/man2/open.2.html)
+[^59]: [Azure Monitor AKSAudit Table](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/aksaudit)
+[^60]: [Kubernetes Auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
+[^61]: [Kubernetes Audit API Reference](https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/)
+[^62]: [Kubernetes Authorization Overview](https://kubernetes.io/docs/reference/access-authn-authz/authorization/)
+[^63]: [Microsoft Security Blog - Storm-2372 Device Code Phishing](https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/)
+[^64]: [Microsoft Security Blog - CaptiveCrunch](https://www.microsoft.com/en-us/security/blog/2026/07/31/captivecrunch-midnight-blizzard-targets-travelers-worldwide-for-malware-delivery-and-credential-theft/)
+[^65]: [Microsoft Identity Platform App Manifest Reference](https://learn.microsoft.com/entra/identity-platform/reference-microsoft-graph-app-manifest)
+[^66]: [Microsoft Identity Platform Application and Service Principal Objects](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
+[^67]: [Azure SDK Credential Chains](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication/credential-chains)
+[^68]: [AKS Managed Identity Overview](https://learn.microsoft.com/en-us/azure/aks/managed-identity-overview)
+[^69]: [Kubernetes Authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
+[^70]: [Linux proc_pid_environ Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html)
+[^71]: [Linux proc_pid_mem Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_mem.5.html)
+[^72]: [Kubernetes RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
+[^73]: [Kubernetes Service Account Administration](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/)
+[^74]: [Kubernetes TokenRequest API Reference](https://raw.githubusercontent.com/kubernetes/website/release-1.34/content/en/docs/reference/kubernetes-api/authentication-resources/token-request-v1.md)
+[^75]: [Microsoft Entra Workload Identity Federation Create Trust](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust)
+[^76]: [Deploy Microsoft Entra Workload ID on AKS](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)
+[^77]: [Customize Cluster Egress with Outbound Types in AKS](https://learn.microsoft.com/en-us/azure/aks/egress-outboundtype)
