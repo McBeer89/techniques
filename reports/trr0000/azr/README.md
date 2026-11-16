@@ -23,10 +23,10 @@ token; later use of the token is [T1550.001]. This TRR treats theft of an
 application secret or certificate from disk, a repository, or a key vault as
 [T1552], a read of a client's on-disk token cache as [T1552.001], and issuance
 with a stolen secret or certificate on a legitimately consented principal as
-[T1078.004], not Procedure B. Authorization-code phishing against a Microsoft
-first-party `client_id` is TRR0034. Azure Arc-enabled servers, Logic Apps
-workflows, federated identity credentials trusting issuers outside Azure
-compute, and authentication transfer are not modeled.
+[T1078.004]. Authorization-code phishing against a Microsoft first-party
+`client_id` is [TRR0034]. Azure Arc-enabled servers, Logic Apps workflows,
+federated identity credentials trusting issuers outside Azure compute, and
+authentication transfer are not modeled.
 
 ## Technique Overview
 
@@ -494,6 +494,7 @@ the pod's follows from the column definition and the egress configuration.
 [T1552.001]: https://attack.mitre.org/techniques/T1552/001/
 [AZT203]: https://microsoft.github.io/Azure-Threat-Research-Matrix/InitialAccess/AZT203/AZT203/
 [AZT601]: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT601/AZT601/
+[TRR0034]: https://github.com/tired-labs/techniques/blob/main/reports/trr0034/azr/README.md
 
 [Device Authorization Grant Internals]: #device-authorization-grant-internals
 [Authorization Code Flow Internals]: #authorization-code-flow-internals
