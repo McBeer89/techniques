@@ -62,7 +62,7 @@
       "caption": "Register Multi-Tenant OAuth Application",
       "labels": [],
       "properties": {
-        "SignInAudience": "AzureADMultipleOrgs"
+        "SignInAudience": "AzureADMultipleOrgs | AzureADandPersonalMicrosoftAccount"
       },
       "style": {
         "node-color": "#cccccc",

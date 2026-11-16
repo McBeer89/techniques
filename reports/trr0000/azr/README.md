@@ -14,9 +14,8 @@
 
 This TRR covers OAuth access-token acquisition on Microsoft Entra ID where an
 adversary causes a legitimate Entra ID OAuth flow to issue tokens to
-attacker-controlled infrastructure, or extracts a token issued to an
-Entra-attached managed identity or federated workload identity on a compromised
-Azure compute or AKS resource.
+attacker-controlled infrastructure, or obtains a token for a managed identity or
+federated workload identity on a compromised Azure compute or AKS resource.
 
 The pipeline ends at the adversary's first receipt of the access or refresh
 token; later use of the token is [T1550.001]. This TRR treats theft of an
@@ -32,12 +31,11 @@ authentication transfer are not modeled.
 
 An adversary obtains a Microsoft Entra ID access token or refresh token issued
 on behalf of a user, service principal, managed identity, or federated workload
-identity, and holds it outside the client the token was issued to. Entra ID
-issues bearer tokens, which any party in possession can use without
-demonstrating possession of a cryptographic key. Because the authentication
-requirements were met when the token was issued, a replayed token grants the
-adversary access to organizational resources even where the user satisfied
-multifactor authentication.
+identity. Entra ID issues bearer tokens, which any party in possession can use
+without demonstrating possession of a cryptographic key. Because the
+authentication requirements were met when the token was issued, a replayed token
+grants the adversary access to organizational resources even where the user
+satisfied multifactor authentication.
 
 ## Technical Background
 
@@ -170,14 +168,14 @@ is an `OAuth2PermissionGrant` for delegated permissions or an
 `AllPrincipals` (all users, grantable by an administrator).[^31] Application
 permissions can be granted through a consent experience.[^32]
 
-Tenant user-consent settings offer three options: no user consent; consent only
-to applications from verified publishers or the organization, and only for
-permissions the administrator selects; or consent to any application for any
-permission that does not require admin consent.[^33] Risk-based step-up consent
-is enabled by default and changes behavior only when user consent is enabled;
-with it, users cannot consent to most newly registered multitenant apps that are
-not publisher verified.[^34][^35] The Microsoft managed consent policy, the
-default for a new tenant, lets end users consent to any user-consentable
+Tenant user-consent settings include disabling user consent; allowing consent
+only to applications from verified publishers or the organization, and only for
+permissions the administrator selects; and allowing consent to any application
+for any permission that does not require admin consent.[^33] Risk-based step-up
+consent is enabled by default and changes behavior only when user consent is
+enabled; with it, users cannot consent to most newly registered multitenant apps
+that are not publisher verified.[^34][^35] The Microsoft managed consent policy,
+the default for a new tenant, lets end users consent to any user-consentable
 delegated permission except a Microsoft-maintained list of Microsoft Graph and
 Exchange Online scopes.[^36]
 
@@ -220,7 +218,7 @@ source of the refresh request.[^42]
 
 `AuditLogs` is the Microsoft Entra audit log, which captures changes to
 applications, groups, users, and licenses, with the activity in
-`ActivityDisplayName`.[^51][^46] The Core Directory activity reference lists,
+`ActivityDisplayName`.[^46][^51] The Core Directory activity reference lists,
 under category `ApplicationManagement`, the activities `Add app role assignment
 to service principal`, `Add delegated permission grant`, `Add service
 principal`, and `Consent to application`.[^52] `Consent to application`
@@ -257,7 +255,7 @@ This procedure covers the device authorization grant initiated on a device in
 the adversary's possession, with the victim granting access from another device;
 the request and response shapes are stated in [Device Authorization Grant
 Internals]. The adversary generates a legitimate device code request at
-`/oauth2/v2.0/devicecode` and tricks the target into entering the `user_code` at
+`/oauth2/v2.0/devicecode` and tricks the victim into entering the `user_code` at
 a legitimate Microsoft sign-in page.[^63] The victim's authentication at the
 verification page authenticates the adversary's session,[^64] and the
 adversary's client, polling `/oauth2/v2.0/token` with the device-code grant
@@ -281,6 +279,8 @@ principal sign-in tables or the audit table carried the user code of either of
 two unredeemed device code requests. Whether the device code request is
 recorded is not established, so the request node carries no label.
 
+#### Detection Data Model
+
 ![TRR0000.AZR.A DDM](ddms/trr0000_azr_a.png)
 
 ### Procedure B: Multi-Tenant Illicit Consent Grant (TRR0000.AZR.B)
@@ -294,12 +294,12 @@ stated in [OAuth Consent Framework], and the request shapes in [Authorization
 Code Flow Internals] and [Client Credentials and Federated Credential Exchange].
 
 The prerequisite is an application registered with the sign-in audience
-`AzureADMultipleOrgs`, which admits work or school accounts from any
-organization's tenant.[^65] An application object is the global representation
-for use across all tenants and its service principal is the local representation
-in a specific tenant, with changes to the object reflected only in the home
-tenant.[^66] The registration is drawn gray because it happens in the
-application's home tenant, not the victim tenant.
+`AzureADMultipleOrgs` or `AzureADandPersonalMicrosoftAccount`, each of which
+admits work or school accounts from any organization's tenant.[^65] An
+application object is the global representation for use across all tenants and
+its service principal is the local representation in a specific tenant.[^66] The
+registration is drawn gray because it happens in the application's home tenant,
+not the victim tenant.
 
 On the delegated branch the victim authenticates at `/oauth2/v2.0/authorize`.
 When a user from a different tenant signs in to the application for the first
@@ -340,6 +340,8 @@ sign-in)` row carrying `ClientCredentialType`, `ServicePrincipalId`, and
 creating the service principal there and the token request naming that tenant in
 its path.
 
+#### Detection Data Model
+
 ![TRR0000.AZR.B DDM](ddms/trr0000_azr_b.png)
 
 ### Procedure C: Managed Identity Token Retrieval (TRR0000.AZR.C)
@@ -361,9 +363,9 @@ that host, and receives a bearer access token. On AKS, a pod without the
 admission webhook.[^4] A credential chain that falls through to managed
 identity[^67] then calls the node's IMDS and obtains a token for an identity
 attached to the node. That path follows from those statements and the AKS IMDS
-default in [The Instance Metadata Service], and it runs through this procedure
-rather than Procedure D. The kubelet identity's default permissions are
-None.[^68]
+default in [The Instance Metadata Service], and it is an instance of this
+procedure. The kubelet managed identity is assigned to AKS nodes[^68] and has no
+default permissions.[^69]
 
 The request is observable as `Linux auditd (connect syscall)` and `Sysmon 3
 (NetworkConnect)` records for the connection to the token endpoint address. The
@@ -373,6 +375,8 @@ carrying `ServicePrincipalId`, `ResourceIdentity`, `ResourceDisplayName`, and
 subsystem cache writes no row follows from the cache behavior in [The Instance
 Metadata Service] and the sign-in table in [Telemetry Surfaces]. The adversary's
 request to the IMDS endpoint itself has no documented Entra record.
+
+#### Detection Data Model
 
 ![TRR0000.AZR.C DDM](ddms/trr0000_azr_c.png)
 
@@ -395,30 +399,30 @@ annotation naming the Entra application.[^4] The adversary reads the projected
 token from the file named by `AZURE_FEDERATED_TOKEN_FILE`,
 `/var/run/secrets/azure/tokens/azure-identity-token` in the documented example,
 a mount path that is an implementation detail of the webhook and can change.[^4]
-The token is a signed JWT[^69] that Kubernetes refreshes in place before it
+The token is a signed JWT[^70] that Kubernetes refreshes in place before it
 expires.[^4] The read is observable as `Linux auditd (open/openat syscall)`
 under a rule keyed on the path. `/proc/<pid>/environ` holds the initial
-environment set at `execve`.[^70] That a read of it yields the token file path
+environment set at `execve`.[^71] That a read of it yields the token file path
 and not the token follows from that content and from
 `AZURE_FEDERATED_TOKEN_FILE` holding a path. `/proc/<pid>/mem` gives access to a
-process's memory pages under a ptrace access-mode check.[^71] The `environ` and
+process's memory pages under a ptrace access-mode check.[^72] The `environ` and
 `mem` reads open a procfs path rather than the token path; it follows that a
 path-keyed audit rule covers the token-file read and not the memory read.
 
 On the TokenRequest branch the adversary mints the assertion instead of reading
 it. The operation requires `create` on `serviceaccounts/token`, the right that
 lets users create TokenRequests to issue tokens for existing service
-accounts,[^72] carried as the operation's `Permission`. The TokenRequest
+accounts,[^73] carried as the operation's `Permission`. The TokenRequest
 subresource of a ServiceAccount, a `POST` to
 `/api/v1/namespaces/{namespace}/serviceaccounts/{name}/token`, issues a
 time-bound token for that service account with the audiences the caller
-requests.[^73][^74] Direct Entra workload identity federation requires a token
+requests.[^74][^75] Direct Entra workload identity federation requires a token
 with the audience `api://AzureADTokenExchange`; when identity bindings are
 enabled the identity binding webhook sets the default projected token's audience
 to `api://AKSIdentityBinding` instead.[^4] The federated identity credential for
 a service account names the subject `system:serviceaccount:<namespace>:<name>`
 and lists the audiences that may appear in the token, with
-`api://AzureADTokenExchange` as the recommended value.[^75] The credential
+`api://AzureADTokenExchange` as the recommended value.[^76] The credential
 matches on the issuer, subject, and audience named in [Client Credentials and
 Federated Credential Exchange], and a TokenRequest for the same service account
 carries that subject and the requested audience. That Entra ID accepts a minted
@@ -427,7 +431,7 @@ token. The request is observable as an `AKSAudit (Kubernetes API server audit)`
 row. That the row carries `Verb` `create` and `ObjectRef` resource
 `serviceaccounts`, subresource `token` follows from the POST-to-create mapping
 and the audit event fields in [Telemetry Surfaces]. The kubelet obtains
-projected service account tokens through the TokenRequest API,[^73] so its own
+projected service account tokens through the TokenRequest API,[^74] so its own
 requests would carry the same verb and object reference.
 
 Either assertion is presented at `/oauth2/v2.0/token` for the federated
@@ -436,13 +440,16 @@ application registration is an `Entra AADServicePrincipalSignInLogs (Federated
 credential exchange)` row identified by `ClientCredentialType` and
 `FederatedCredentialId`. `AADManagedIdentitySignInLogs` also carries
 `FederatedCredentialId`, and the documented AKS setup federates a user-assigned
-managed identity,[^76] so which table records an exchange whose credential is on
+managed identity,[^77] so which table records an exchange whose credential is on
 a user-assigned managed identity is not stated. The
 `AADServicePrincipalSignInLogs` `IPAddress` column is the address of the client
 used to sign in.[^48] By default AKS egresses through an AKS-assigned Standard
 Load Balancer public IP, and the NAT gateway outbound types egress through Azure
-NAT Gateway.[^77] That the row records the cluster's egress address rather than
-the pod's follows from the column definition and the egress configuration.
+NAT Gateway.[^78] That the row for an exchange sent from a pod records the
+cluster's egress address rather than the pod's follows from the column
+definition and the egress configuration.
+
+#### Detection Data Model
 
 ![TRR0000.AZR.D DDM](ddms/trr0000_azr_d.png)
 
@@ -604,13 +611,14 @@ the pod's follows from the column definition and the egress configuration.
 [^65]: [Microsoft Identity Platform App Manifest Reference](https://learn.microsoft.com/entra/identity-platform/reference-microsoft-graph-app-manifest)
 [^66]: [Microsoft Identity Platform Application and Service Principal Objects](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
 [^67]: [Azure SDK Credential Chains](https://learn.microsoft.com/en-us/azure/developer/python/sdk/authentication/credential-chains)
-[^68]: [AKS Managed Identity Overview](https://learn.microsoft.com/en-us/azure/aks/managed-identity-overview)
-[^69]: [Kubernetes Authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
-[^70]: [Linux proc_pid_environ Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html)
-[^71]: [Linux proc_pid_mem Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_mem.5.html)
-[^72]: [Kubernetes RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
-[^73]: [Kubernetes Service Account Administration](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/)
-[^74]: [Kubernetes TokenRequest API Reference](https://raw.githubusercontent.com/kubernetes/website/release-1.34/content/en/docs/reference/kubernetes-api/authentication-resources/token-request-v1.md)
-[^75]: [Microsoft Entra Workload Identity Federation Create Trust](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust)
-[^76]: [Deploy Microsoft Entra Workload ID on AKS](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)
-[^77]: [Customize Cluster Egress with Outbound Types in AKS](https://learn.microsoft.com/en-us/azure/aks/egress-outboundtype)
+[^68]: [AKS Service Permissions Reference](https://learn.microsoft.com/en-us/azure/aks/aks-service-permissions)
+[^69]: [AKS Managed Identity Overview](https://learn.microsoft.com/en-us/azure/aks/managed-identity-overview)
+[^70]: [Kubernetes Authentication](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
+[^71]: [Linux proc_pid_environ Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html)
+[^72]: [Linux proc_pid_mem Manual Page](https://man7.org/linux/man-pages/man5/proc_pid_mem.5.html)
+[^73]: [Kubernetes RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
+[^74]: [Kubernetes Service Account Administration](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/)
+[^75]: [Kubernetes TokenRequest API Reference](https://raw.githubusercontent.com/kubernetes/website/release-1.34/content/en/docs/reference/kubernetes-api/authentication-resources/token-request-v1.md)
+[^76]: [Microsoft Entra Workload Identity Federation Create Trust](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust)
+[^77]: [Deploy Microsoft Entra Workload ID on AKS](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)
+[^78]: [Customize Cluster Egress with Outbound Types in AKS](https://learn.microsoft.com/en-us/azure/aks/egress-outboundtype)
