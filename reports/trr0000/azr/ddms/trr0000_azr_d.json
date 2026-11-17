@@ -62,8 +62,7 @@
       "caption": "Execute Code in Pod",
       "labels": [],
       "properties": {
-        "PodLabel": "azure.workload.identity/use=true",
-        "ServiceAccountAnnotation": "azure.workload.identity/client-id"
+        "PodLabel": "azure.workload.identity/use=true"
       },
       "style": {
         "node-color": "#cccccc",

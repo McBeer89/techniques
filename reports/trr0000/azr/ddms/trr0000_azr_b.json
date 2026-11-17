@@ -133,8 +133,7 @@
         "Entra AADNonInteractiveUserSignInLogs (Authorization code redemption)"
       ],
       "properties": {
-        "GrantType": "authorization_code",
-        "ClientAuth": "client_secret | client_assertion"
+        "GrantType": "authorization_code"
       },
       "style": {
         "border-color": "#000000",
