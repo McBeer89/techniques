@@ -20,12 +20,12 @@ federated workload identity on a compromised Azure compute or AKS resource.
 The pipeline ends at the adversary's first receipt of the access or refresh
 token; later use of the token is [T1550.001]. This TRR treats theft of an
 application secret or certificate from disk, a repository, or a key vault as
-[T1552], a read of a client's on-disk token cache as [T1552.001], and issuance
-with a stolen secret or certificate on a legitimately consented principal as
-[T1078.004]. Authorization-code phishing against a Microsoft first-party
-`client_id` is [TRR0034]. Azure Arc-enabled servers, Logic Apps workflows,
-federated identity credentials trusting issuers outside Azure compute, and
-authentication transfer are not modeled.
+[T1552] and a read of a client's on-disk token cache as [T1552.001]. It treats
+issuance with a stolen secret or certificate on a legitimately consented
+principal as [T1078.004]; authorization-code phishing against a Microsoft
+first-party `client_id` is [TRR0034]. Azure Arc-enabled servers, Logic Apps
+workflows, federated identity credentials trusting issuers outside Azure
+compute, and authentication transfer are not modeled.
 
 ## Technique Overview
 
@@ -182,15 +182,15 @@ Exchange Online scopes.[^37]
 
 Granting tenant-wide admin consent requires signing in as a user authorized to
 consent on behalf of the organization.[^38] Privileged Role Administrator
-qualifies for any permission on any API; Cloud Application Administrator, AI
+qualifies for any permission on any API. Cloud Application Administrator, AI
 Administrator, and Application Administrator qualify for any permission except
-Microsoft Graph app roles; a custom directory role that includes the permission
-to grant permissions to applications also qualifies.[^38][^39] The admin consent
-endpoint `https://login.microsoftonline.com/{tenant}/v2.0/adminconsent` requires
-a tenant administrator to sign in to complete the request.[^40] Application
-permissions are requested through the `/.default` scope value, and the
-documented success redirect carries `admin_consent=True`, `tenant`, `scope`, and
-`state`.
+Microsoft Graph app roles.[^38][^39] A custom directory role that includes the
+permission to grant permissions to applications also qualifies.[^38] The admin
+consent endpoint `https://login.microsoftonline.com/{tenant}/v2.0/adminconsent`
+requires a tenant administrator to sign in to complete the request.[^40]
+Application permissions are requested through the `/.default` scope value, and
+the documented success redirect carries `admin_consent=True`, `tenant`, `scope`,
+and `state`.
 
 ### Telemetry Surfaces
 
@@ -213,20 +213,17 @@ tables.[^46][^47][^48][^49][^50]
 authentication, and `deviceCode` is among its values.[^46]
 `OriginalTransferMethod` carries the transfer method used to initiate a session
 throughout all subsequent requests;[^46] the Graph `originalTransferMethod`
-value for a session begun with device code flow is `deviceCodeFlow`.[^51] For
-non-interactive sign-ins performed by confidential clients, the logged
-`IPAddress` is the original IP used for the original token issuance, not the
-source of the refresh request.[^43]
+value for a session begun with device code flow is `deviceCodeFlow`.[^51]
 
 `AuditLogs` is the Microsoft Entra audit log, which captures changes to
 applications, groups, users, and licenses, with the activity in
-`ActivityDisplayName`.[^47][^52] The Core Directory activity reference lists,
-under category `ApplicationManagement`, the activities `Add app role assignment
-to service principal`, `Add delegated permission grant`, `Add service
-principal`, and `Consent to application`.[^53] `Consent to application`
-corresponds to a user granting consent, `Add delegated permission grant` to
-granting delegated access, and `Add app role assignment to service principal` to
-granting app-only access.[^54]
+`ActivityDisplayName`.[^47][^52] The audit log's Core Directory activities in
+category `ApplicationManagement` include `Add app role assignment to service
+principal`, `Add delegated permission grant`, `Add service principal`, and
+`Consent to application`.[^53] `Consent to application` corresponds to a user
+granting consent, `Add delegated permission grant` to granting delegated access,
+and `Add app role assignment to service principal` to granting app-only
+access.[^54]
 
 On the host, an outbound connection from the resource is observable as a Linux
 auditd `SYSCALL` record under a syscall rule that names `connect`.[^55][^56] It
@@ -312,10 +309,9 @@ sign-in and the code redemption with that earlier consent as its prerequisite.
 Whether the consent audit rows are written again in that case is not documented.
 
 On the application branch a tenant administrator signs in at the admin consent
-endpoint, and for Microsoft Graph permissions the consent results in an
-`appRoleAssignment`. The documented success redirect in [OAuth Consent
-Framework] lists no `code` parameter, and the application proceeds directly to a
-`/token` request with the client-credentials grant and its own credential.[^3]
+endpoint. The documented success redirect in [OAuth Consent Framework] lists no
+`code` parameter, and the application proceeds directly to a `/token` request
+with the client-credentials grant and its own credential.[^3]
 
 The victim's interactive sign-in is an `Entra SigninLogs (Interactive sign-in)`
 row whose `AppId` column identifies the application.[^46] On either branch, the
@@ -407,13 +403,12 @@ process's memory pages under a ptrace access-mode check.[^72] The `environ` and
 audit rule keyed on the token file covers the token-file read and neither procfs
 read.
 
-On the TokenRequest branch the adversary mints the assertion instead of reading
-it. The operation requires `create` on `serviceaccounts/token`, the right that
-lets users create TokenRequests to issue tokens for existing service
-accounts,[^73] carried as the operation's `Permission`. The TokenRequest
-subresource of a ServiceAccount, a `POST` to
-`/api/v1/namespaces/{namespace}/serviceaccounts/{name}/token`, issues a
-time-bound token for that service account with the audiences the caller
+On the TokenRequest branch the adversary mints the assertion. The operation
+requires `create` on `serviceaccounts/token`, the right that lets users create
+TokenRequests to issue tokens for existing service accounts,[^73] carried as the
+operation's `Permission`. The TokenRequest subresource of a ServiceAccount, a
+`POST` to `/api/v1/namespaces/{namespace}/serviceaccounts/{name}/token`, issues
+a time-bound token for that service account with the audiences the caller
 requests.[^74][^75] The federated identity credential for a service account
 names the subject `system:serviceaccount:<namespace>:<name>` and lists the
 audiences that may appear in the token, with `api://AzureADTokenExchange` as the
